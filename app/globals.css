@@ -78,28 +78,28 @@ h1,h2,h3,h4,h5,h6 {
 /* Display — cinematic big text */
 .h-display {
   font-family: var(--font-serif);
-  font-size: clamp(4rem, 10vw, 9rem);
+  font-size: clamp(3rem, 8vw, 9rem);
   font-weight: 300;
   letter-spacing: -0.02em;
   line-height: 0.92;
 }
 .h-hero {
   font-family: var(--font-serif);
-  font-size: clamp(3.5rem, 9vw, 8rem);
+  font-size: clamp(2.8rem, 8vw, 8rem);
   font-weight: 300;
   line-height: 0.95;
   letter-spacing: -0.025em;
 }
 .h-section {
   font-family: var(--font-serif);
-  font-size: clamp(2.5rem, 5vw, 5rem);
+  font-size: clamp(2rem, 4vw, 5rem);
   font-weight: 300;
   letter-spacing: -0.02em;
   line-height: 1.0;
 }
 .h-card {
   font-family: var(--font-serif);
-  font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+  font-size: clamp(1.4rem, 2vw, 2.2rem);
   font-weight: 400;
   letter-spacing: -0.01em;
 }
@@ -732,7 +732,7 @@ h1,h2,h3,h4,h5,h6 {
 
 /* Responsive containers */
 @media (max-width: 768px) {
-  .container, .container-sm { padding: 0 1.5rem; }
-  .section { padding: 6rem 0; }
-  .page-hero { padding: 9rem 0 4rem; }
+  .container, .container-sm { padding: 0 1.25rem; }
+  .section { padding: 4rem 0; }
+  .page-hero { padding: 7rem 0 3rem; }
 }
