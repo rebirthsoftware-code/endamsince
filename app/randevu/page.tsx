@@ -1,0 +1,210 @@
+'use client';
+
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import './Randevu.css';
+
+function RandevuContent() {
+  const searchParams = useSearchParams();
+  const branchIdParam = searchParams.get('branchId');
+
+  const [step, setStep] = useState(1);
+  const [branches, setBranches] = useState<any[]>([]);
+  const [personnel, setPersonnel] = useState<any[]>([]);
+  const [selectedBranch, setSelectedBranch] = useState<string>(branchIdParam || '');
+  const [selectedPersonnel, setSelectedPersonnel] = useState<string>('');
+  const [date, setDate] = useState<string>('');
+  const [time, setTime] = useState<string>('');
+  const [customerName, setCustomerName] = useState<string>('');
+  const [customerPhone, setCustomerPhone] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/branches')
+      .then(res => res.json())
+      .then(data => setBranches(data))
+      .catch(err => console.error(err));
+  }, []);
+
+  useEffect(() => {
+    if (selectedBranch) {
+      fetch(`/api/personnel?branchId=${selectedBranch}`)
+        .then(res => res.json())
+        .then(data => setPersonnel(data))
+        .catch(err => console.error(err));
+    }
+  }, [selectedBranch]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          personnelId: selectedPersonnel,
+          customerName,
+          customerPhone,
+          date,
+          time
+        })
+      });
+      if (res.ok) {
+        setSuccess(true);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+    setIsSubmitting(false);
+  };
+
+  const nextStep = () => setStep(step + 1);
+  const prevStep = () => setStep(step - 1);
+
+  if (success) {
+    return (
+      <div className="container section text-center" style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div className="success-icon">✓</div>
+        <h1 className="heading-2 text-gold">Randevunuz Alındı!</h1>
+        <p className="text-secondary mt-4" style={{ fontSize: '1.2rem' }}>Sayın <strong>{customerName}</strong>, randevunuz başarıyla oluşturuldu.<br/>Personelimiz en kısa sürede randevunuzu onaylayacaktır.</p>
+        <button className="btn btn-primary mt-8 mx-auto" onClick={() => window.location.href = '/'}>Ana Sayfaya Dön</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container section" style={{ minHeight: '80vh', paddingTop: '8rem' }}>
+      <div className="text-center mb-8">
+        <h1 className="heading-2">Randevu Oluştur</h1>
+        <p className="text-secondary">Sadece 4 adımda yerinizi ayırtın.</p>
+      </div>
+      
+      <div className="booking-card glass mx-auto shadow-lg">
+        {/* Progress Bar */}
+        <div className="progress-container mb-8">
+          <div className="progress-bar" style={{ width: `${(step / 4) * 100}%` }}></div>
+        </div>
+
+        {step === 1 && (
+          <div className="step-content fade-in">
+            <h3 className="heading-3 mb-6">1. Şube Seçimi</h3>
+            <div className="grid-options">
+              {branches.map(b => (
+                <div 
+                  key={b.id} 
+                  className={`option-card ${selectedBranch === b.id ? 'selected' : ''}`}
+                  onClick={() => setSelectedBranch(b.id)}
+                >
+                  <h4 className={selectedBranch === b.id ? 'text-gold' : ''}>{b.name}</h4>
+                  <p className="text-secondary text-sm mt-2">{b.location}</p>
+                </div>
+              ))}
+            </div>
+            <button 
+              className="btn btn-primary mt-8 w-full btn-lg" 
+              disabled={!selectedBranch} 
+              onClick={nextStep}
+            >
+              Devam Et
+            </button>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="step-content fade-in">
+            <h3 className="heading-3 mb-6">2. Personel Seçimi</h3>
+            <div className="grid-options">
+              {personnel.map(p => (
+                <div 
+                  key={p.id} 
+                  className={`option-card ${selectedPersonnel === p.id ? 'selected' : ''}`}
+                  onClick={() => setSelectedPersonnel(p.id)}
+                >
+                  <div className="personnel-avatar" style={{ overflow: 'hidden', position: 'relative' }}>
+                    {p.image ? (
+                      <img src={p.image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      p.name.charAt(0)
+                    )}
+                  </div>
+                  <h4 className={selectedPersonnel === p.id ? 'text-gold' : ''}>{p.name}</h4>
+                  <p className="text-secondary text-sm">{p.role}</p>
+                </div>
+              ))}
+              {personnel.length === 0 && <p className="text-secondary">Bu şubede personel bulunamadı.</p>}
+            </div>
+            <div className="flex-between mt-8 gap-4">
+              <button className="btn btn-outline" onClick={prevStep}>Geri</button>
+              <button className="btn btn-primary flex-grow" disabled={!selectedPersonnel} onClick={nextStep}>Devam Et</button>
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="step-content fade-in">
+            <h3 className="heading-3 mb-6">3. Tarih ve Saat</h3>
+            <div className="input-group">
+              <label className="input-label">Tarih Seçin</label>
+              <input type="date" className="input-field input-lg" value={date} onChange={e => setDate(e.target.value)} min={new Date().toISOString().split('T')[0]} />
+            </div>
+            <div className="input-group mt-6">
+              <label className="input-label">Saat Seçin</label>
+              <select className="input-field input-lg" value={time} onChange={e => setTime(e.target.value)}>
+                <option value="">Lütfen saat seçiniz</option>
+                <option value="09:00">09:00</option>
+                <option value="10:00">10:00</option>
+                <option value="11:00">11:00</option>
+                <option value="13:00">13:00</option>
+                <option value="14:00">14:00</option>
+                <option value="15:00">15:00</option>
+                <option value="16:00">16:00</option>
+                <option value="17:00">17:00</option>
+              </select>
+            </div>
+            <div className="flex-between mt-8 gap-4">
+              <button className="btn btn-outline" onClick={prevStep}>Geri</button>
+              <button className="btn btn-primary flex-grow" disabled={!date || !time} onClick={nextStep}>Devam Et</button>
+            </div>
+          </div>
+        )}
+
+        {step === 4 && (
+          <form className="step-content fade-in" onSubmit={handleSubmit}>
+            <h3 className="heading-3 mb-6">4. Kişisel Bilgileriniz</h3>
+            
+            <div className="highlight-box mb-6">
+              <p className="text-sm text-secondary">Seçtiğiniz Randevu:</p>
+              <p className="font-bold">{date} - Saat {time}</p>
+            </div>
+
+            <div className="input-group">
+              <label className="input-label">Adınız ve Soyadınız <span className="text-danger">*</span></label>
+              <input required type="text" className="input-field input-lg focus-gold" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Örn: Ali Yılmaz" />
+            </div>
+            <div className="input-group mt-6">
+              <label className="input-label">Telefon Numaranız <span className="text-danger">*</span></label>
+              <input required type="tel" className="input-field input-lg focus-gold" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="05XX XXX XX XX" />
+            </div>
+
+            <div className="flex-between mt-10 gap-4">
+              <button type="button" className="btn btn-outline" onClick={prevStep}>Geri</button>
+              <button type="submit" className="btn btn-primary flex-grow btn-lg" disabled={!customerName || !customerPhone || isSubmitting}>
+                {isSubmitting ? 'Onaylanıyor...' : 'Randevuyu Tamamla'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function RandevuPage() {
+  return (
+    <Suspense fallback={<div className="container section text-center" style={{ paddingTop: '10rem' }}>Yükleniyor...</div>}>
+      <RandevuContent />
+    </Suspense>
+  );
+}

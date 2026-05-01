@@ -1,0 +1,162 @@
+/* ─── HIZMETLER PAGE ─── */
+.services-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2rem;
+}
+.svc-detail-card {
+  position: relative;
+  padding: 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: all var(--t-mid);
+}
+.svc-detail-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-orange); border-color: var(--border-md); }
+.svc-popular {
+  border-color: var(--orange);
+  border-width: 2px;
+  box-shadow: var(--shadow-orange);
+}
+.svc-popular-badge {
+  position: absolute;
+  top: -12px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--orange);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.25rem 1rem;
+  border-radius: var(--r-pill);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.svc-detail-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.svc-detail-icon { font-size: 2rem; flex-shrink: 0; }
+.svc-detail-head h3 {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  margin-bottom: 0.3rem;
+}
+.svc-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.svc-detail-price { font-family: var(--font-display); font-size: 1.1rem; letter-spacing: 0.05em; }
+.svc-detail-desc { font-size: 0.92rem; line-height: 1.8; }
+.svc-features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  flex-grow: 1;
+}
+.svc-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.88rem;
+  color: var(--text-mid);
+}
+.check {
+  color: var(--orange);
+  font-weight: 700;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+}
+
+/* ─── PACKAGES ─── */
+.packages-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.pkg-card {
+  position: relative;
+  background: var(--white);
+  border-radius: var(--r-xl);
+  padding: 2.5rem 2rem;
+  border: 1.5px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: all var(--t-mid);
+}
+.pkg-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
+.pkg-popular {
+  background: var(--text-dark);
+  border-color: var(--orange);
+  box-shadow: var(--shadow-lg);
+  color: #fff;
+}
+.pkg-popular * { color: #fff !important; }
+.pkg-popular .text-muted { color: rgba(255,255,255,0.6) !important; }
+.pkg-popular .check { color: var(--orange) !important; }
+.pkg-badge {
+  position: absolute;
+  top: -14px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--orange);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.3rem 1.1rem;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+  letter-spacing: 0.08em;
+}
+.pkg-icon { font-size: 2.2rem; }
+.pkg-name {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+.pkg-price {
+  font-family: var(--font-display);
+  font-size: 2.8rem;
+  color: var(--orange);
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+.pkg-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  flex-grow: 1;
+  margin-bottom: 0.5rem;
+}
+.pkg-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+}
+
+/* ─── FAQ ─── */
+.faq-list {
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+.faq-item { padding: 1.8rem 2rem; transition: all var(--t-mid); }
+.faq-item:hover { border-color: var(--border-md); box-shadow: var(--shadow-md); }
+.faq-q {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  margin-bottom: 0.6rem;
+  color: var(--text-dark);
+}
+.faq-a { font-size: 0.95rem; line-height: 1.8; }

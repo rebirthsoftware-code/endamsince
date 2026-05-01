@@ -1,0 +1,45 @@
+/* HorizontalScroll CSS */
+
+/* Outer tall wrapper — this is what the browser actually scrolls */
+.hs-outer {
+  /* 300vh gives enough scroll room for 3–4 cards per "page";
+     adjust multiplier based on card count if needed */
+  height: 300vh;
+  position: relative;
+}
+
+/* The sticky viewport — always fills the screen */
+.hs-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  background: var(--bg-color);
+}
+
+/* The moving track — sits wider than the viewport */
+.hs-track {
+  display: flex;
+  gap: 3rem;
+  padding: 0 10vw;
+  will-change: transform;
+  /* No transition here — the RAF lerp handles smoothness */
+}
+
+/* Progress indicator line at the bottom of the sticky viewport */
+.hs-sticky::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--accent-gold) var(--progress, 0%),
+    rgba(197, 160, 89, 0.15) var(--progress, 0%)
+  );
+}

@@ -1,0 +1,106 @@
+/* ─── TEAM GRID ─── */
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2.5rem;
+}
+.team-card {
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  background: var(--white);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--t-mid);
+}
+.team-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-orange);
+  border-color: var(--border-md);
+}
+.team-img {
+  position: relative;
+  height: 320px;
+  overflow: hidden;
+}
+.team-img img { transition: transform 0.7s ease, filter 0.5s ease !important; filter: grayscale(30%); }
+.team-card:hover .team-img img { transform: scale(1.05) !important; filter: grayscale(0%); }
+.team-img-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 55%);
+}
+.team-avatar-placeholder {
+  position: absolute;
+  inset: 0;
+  background: var(--orange-pale);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.team-avatar-placeholder span {
+  font-family: var(--font-serif);
+  font-size: 5rem;
+  color: var(--orange);
+}
+.team-branch-tag {
+  position: absolute;
+  top: 1rem; right: 1rem;
+  background: rgba(255,255,255,0.92);
+  color: var(--text-dark);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--r-pill);
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(8px);
+}
+.team-body { padding: 1.5rem 1.8rem; }
+.team-body h3 {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  margin-bottom: 0.3rem;
+}
+.team-role {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.3rem;
+}
+.team-desc { font-size: 0.82rem; }
+
+/* Empty state */
+.empty-team {
+  text-align: center;
+  padding: 5rem 2rem;
+}
+.empty-icon { font-size: 4rem; margin-bottom: 1rem; }
+.empty-team h3 { font-family: var(--font-serif); font-size: 1.6rem; margin-bottom: 0.5rem; }
+
+/* ─── JOIN US ─── */
+.join-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  align-items: center;
+}
+.join-perks {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.perk-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.2rem 1.5rem;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--white);
+  transition: all var(--t-mid);
+}
+.perk-item:hover { border-color: var(--border-md); box-shadow: var(--shadow-sm); }
+.perk-icon { font-size: 1.6rem; flex-shrink: 0; }
+
+@media (max-width: 900px) {
+  .join-grid { grid-template-columns: 1fr; gap: 3rem; }
+}
