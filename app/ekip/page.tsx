@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { PrismaClient } from '@prisma/client';
 import './ekip.css';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Ekibimiz',
   description: 'Endamsince\'nin uzman berber ve stilistleri. Ekibimizi tanıyın.',

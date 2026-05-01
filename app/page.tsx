@@ -4,6 +4,8 @@ import { PrismaClient } from '@prisma/client';
 import HomeAnimations from '@/components/HomeAnimations';
 import './Page.css';
 
+export const dynamic = 'force-dynamic';
+
 const prisma = new PrismaClient();
 
 const MARQUEE = "ERKEK BAKIMI • ZİRVE DENEYİMİ • KLASİK USTURA • MODERN KESİM • ENDAMSINCE ZONGULDAK • ".repeat(5).split('•');
