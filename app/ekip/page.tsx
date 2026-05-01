@@ -14,7 +14,12 @@ export const metadata: Metadata = {
 const prisma = new PrismaClient();
 
 export default async function EkipPage() {
-  const personnel = await prisma.personnel.findMany({ include: { branch: true } });
+  let personnel = [];
+  try {
+    personnel = await prisma.personnel.findMany({ include: { branch: true } });
+  } catch (error) {
+    console.error("Ekip veritabanı hatası:", error);
+  }
 
   return (
     <>

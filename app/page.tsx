@@ -24,8 +24,20 @@ const PRODUCTS_PREVIEW = [
 ];
 
 export default async function HomePage() {
-  const branches  = await prisma.branch.findMany();
-  const personnel = await prisma.personnel.findMany({ include: { branch: true } });
+  let branches = [];
+  let personnel = [];
+
+  try {
+    branches  = await prisma.branch.findMany();
+    personnel = await prisma.personnel.findMany({ include: { branch: true } });
+  } catch (error) {
+    console.error("Database connection failed. Showing fallback content.", error);
+    // Fallback data if DB is not reachable
+    branches = [
+      { id: 'f1', name: 'Zonguldak Merkez', location: 'Zonguldak, Merkez' },
+      { id: 'f2', name: 'Ereğli Şube', location: 'Zonguldak, Ereğli' }
+    ];
+  }
 
   return (
     <>

@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "node --experimental-strip-types prisma/seed.ts",
-    "postinstall": "prisma generate && prisma db push && npm run seed"
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "node --experimental-strip-types prisma/seed.ts"
