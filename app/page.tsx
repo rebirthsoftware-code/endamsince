@@ -24,8 +24,8 @@ const PRODUCTS_PREVIEW = [
 ];
 
 export default async function HomePage() {
-  let branches = [];
-  let personnel = [];
+  let branches: any[] = [];
+  let personnel: any[] = [];
 
   try {
     branches  = await prisma.branch.findMany();

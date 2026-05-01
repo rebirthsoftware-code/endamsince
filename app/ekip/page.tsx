@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 const prisma = new PrismaClient();
 
 export default async function EkipPage() {
-  let personnel = [];
+  let personnel: any[] = [];
   try {
     personnel = await prisma.personnel.findMany({ include: { branch: true } });
   } catch (error) {
