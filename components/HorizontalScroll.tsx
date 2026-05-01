@@ -23,6 +23,13 @@ export default function HorizontalScroll({ children }: HorizontalScrollProps) {
         return;
       }
 
+      // Mobile check: don't run heavy lerp logic on small screens
+      if (window.innerWidth <= 768) {
+        trackRef.current.style.transform = '';
+        rafId = requestAnimationFrame(update);
+        return;
+      }
+
       const outer  = outerRef.current.getBoundingClientRect();
       const trackW = trackRef.current.scrollWidth;
       const winW   = window.innerWidth;

@@ -43,3 +43,33 @@
     rgba(197, 160, 89, 0.15) var(--progress, 0%)
   );
 }
+
+/* =========================================
+   MOBILE OPTIMIZATION (NATIVE SCROLL)
+   ========================================= */
+@media (max-width: 768px) {
+  .hs-outer {
+    height: auto !important; /* Disable 300vh */
+    padding: 2rem 0;
+  }
+  .hs-sticky {
+    position: relative;
+    height: auto;
+    overflow: visible;
+  }
+  .hs-sticky::after { display: none; }
+  .hs-track {
+    padding: 0 1.5rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 1.5rem;
+    scrollbar-width: none; /* Firefox */
+  }
+  .hs-track::-webkit-scrollbar { display: none; /* Chrome/Safari */ }
+  .hs-track > * {
+    scroll-snap-align: center;
+    flex-shrink: 0;
+  }
+}

@@ -319,6 +319,16 @@ h1,h2,h3,h4,h5,h6 {
   padding: 1.2rem 0;
 }
 
+/* Optimize header blur for mobile */
+@media (max-width: 768px) {
+  .main-header.scrolled {
+    background: rgba(255,255,255,0.99); /* Solid white to avoid blur overhead */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    padding: 1rem 0;
+  }
+}
+
 .header-inner {
   display: flex;
   justify-content: space-between;

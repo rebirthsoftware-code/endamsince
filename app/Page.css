@@ -42,6 +42,14 @@
   100%{ transform: translate(1%,-1%); }
 }
 
+@media (max-width: 768px) {
+  /* Disable heavy SVG grain animation on mobile for performance */
+  .hero-overlay::after {
+    animation: none;
+    opacity: 0.02; /* lighter static noise */
+  }
+}
+
 .hero-top-bar {
   position: relative;
   z-index: 2;
