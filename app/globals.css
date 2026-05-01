@@ -408,6 +408,18 @@ h1,h2,h3,h4,h5,h6 {
 }
 .scissor-overlay.is-open { pointer-events: all; }
 
+.overlay-close-btn {
+  position: absolute;
+  top: 2rem; right: 3rem;
+  z-index: 310;
+  background: none; border: none;
+  color: #fff; font-size: 2rem;
+  cursor: none; opacity: 0;
+  transition: opacity 0.5s ease 0.5s;
+}
+.scissor-overlay.is-open .overlay-close-btn { opacity: 1; }
+@media (max-width: 768px) { .overlay-close-btn { right: 1.25rem; top: 1.5rem; } }
+
 .blade-top, .blade-bottom {
   position: absolute;
   width: 100%; height: 50%;

@@ -81,6 +81,13 @@ export default function Header() {
 
       {/* ── SCISSOR OVERLAY ── */}
       <div className={`scissor-overlay${open ? ' is-open' : ''}`} role="dialog">
+        <button 
+          className="overlay-close-btn" 
+          onClick={() => setOpen(false)}
+          aria-label="Menüyü kapat"
+        >
+          ✕
+        </button>
         <div className="blade-top" />
         <div className="blade-bottom" />
 
