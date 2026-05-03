@@ -27,6 +27,16 @@ model Personnel {
   subscriptions PushSubscription[]
 }
 
+model TimeSlot {
+  id        String   @id @default(cuid())
+  time      String   @unique
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([active, order])
+}
+
 model Service {
   id          String   @id @default(cuid())
   name        String

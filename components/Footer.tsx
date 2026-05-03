@@ -1,7 +1,15 @@
+'use client';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
+
+const FOOTER_HIDDEN = ['/panel', '/admin'];
 
 export default function Footer() {
+  const pathname = usePathname();
+  if (FOOTER_HIDDEN.some(r => pathname === r || pathname?.startsWith(r + '/'))) {
+    return null;
+  }
   return (
     <footer className="site-footer">
       <div className="container">

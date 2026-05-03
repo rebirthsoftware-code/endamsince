@@ -21,14 +21,25 @@ function RandevuContent() {
   const [success, setSuccess] = useState(false);
   const [takenTimes, setTakenTimes] = useState<string[]>([]);
   const [submitError, setSubmitError] = useState<string>('');
-
-  const ALL_SLOTS = ['09:00','10:00','11:00','13:00','14:00','15:00','16:00','17:00'];
+  const [allSlots, setAllSlots] = useState<string[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(true);
 
   useEffect(() => {
     fetch('/api/branches')
       .then(res => res.json())
       .then(data => setBranches(data))
       .catch(err => console.error(err));
+  }, []);
+
+  /* ── Aktif saat slotlarını çek ── */
+  useEffect(() => {
+    fetch('/api/time-slots')
+      .then(res => res.json())
+      .then(data => {
+        setAllSlots(Array.isArray(data?.slots) ? data.slots : []);
+      })
+      .catch(() => setAllSlots([]))
+      .finally(() => setSlotsLoading(false));
   }, []);
 
   useEffect(() => {
@@ -186,9 +197,13 @@ function RandevuContent() {
               <label className="input-label">Saat Seçin</label>
               {!date ? (
                 <p className="text-secondary text-sm">Önce bir tarih seçin.</p>
+              ) : slotsLoading ? (
+                <p className="text-secondary text-sm">Saatler yükleniyor…</p>
+              ) : allSlots.length === 0 ? (
+                <p className="text-secondary text-sm">Şu anda uygun saat yok. Lütfen daha sonra tekrar deneyin.</p>
               ) : (
                 <div className="time-slot-grid">
-                  {ALL_SLOTS.map(slot => {
+                  {allSlots.map(slot => {
                     const isTaken = takenTimes.includes(slot);
                     const isSelected = time === slot;
                     return (

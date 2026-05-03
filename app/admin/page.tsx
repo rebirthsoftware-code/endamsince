@@ -33,7 +33,14 @@ type Branch = {
   location: string;
   image?: string | null;
 };
-type Tab = 'services' | 'personnel' | 'branches';
+type Tab = 'services' | 'personnel' | 'branches' | 'slots';
+
+type TimeSlot = {
+  id: string;
+  time: string;
+  order: number;
+  active: boolean;
+};
 
 function authHeaders(pin: string): HeadersInit {
   return { 'Content-Type': 'application/json', [HEADER]: pin };
@@ -163,6 +170,13 @@ export default function AdminPage() {
             <span className="admin-tab-icon">🏢</span>
             Şubeler
           </button>
+          <button
+            className={`admin-tab ${tab === 'slots' ? 'active' : ''}`}
+            onClick={() => setTab('slots')}
+          >
+            <span className="admin-tab-icon">🕒</span>
+            Saatler
+          </button>
         </nav>
       </header>
 
@@ -170,6 +184,7 @@ export default function AdminPage() {
         {tab === 'services'  && <ServicesTab pin={authPin} showToast={showToast} />}
         {tab === 'personnel' && <PersonnelTab pin={authPin} showToast={showToast} />}
         {tab === 'branches'  && <BranchesTab pin={authPin} showToast={showToast} />}
+        {tab === 'slots'     && <SlotsTab pin={authPin} showToast={showToast} />}
       </main>
 
       {toast && (
@@ -629,6 +644,150 @@ function BranchModal({
         </footer>
       </form>
     </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   TIME SLOTS TAB
+   ═══════════════════════════════════════════════ */
+
+function SlotsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', m: string) => void }) {
+  const [list, setList] = useState<TimeSlot[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newTime, setNewTime] = useState('');
+  const [adding, setAdding] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/time-slots', { headers: authHeaders(pin) });
+      if (res.ok) setList(await res.json());
+    } finally {
+      setLoading(false);
+    }
+  }, [pin]);
+  useEffect(() => { load(); }, [load]);
+
+  const addSlot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTime) return;
+    setAdding(true);
+    try {
+      const order = list.length > 0
+        ? Math.max(...list.map((s) => s.order)) + 1
+        : 1;
+      const res = await fetch('/api/admin/time-slots', {
+        method: 'POST',
+        headers: authHeaders(pin),
+        body: JSON.stringify({ time: newTime, order }),
+      });
+      if (res.ok) {
+        showToast('ok', 'Saat eklendi');
+        setNewTime('');
+        await load();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showToast('err', err.error || 'Eklenemedi');
+      }
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const remove = async (id: string, time: string) => {
+    if (!confirm(`${time} saatini silmek istiyor musunuz?`)) return;
+    const res = await fetch(`/api/admin/time-slots/${id}`, {
+      method: 'DELETE',
+      headers: authHeaders(pin),
+    });
+    if (res.ok) {
+      showToast('ok', 'Silindi');
+      await load();
+    } else {
+      showToast('err', 'Silinemedi');
+    }
+  };
+
+  const toggle = async (s: TimeSlot) => {
+    const res = await fetch(`/api/admin/time-slots/${s.id}`, {
+      method: 'PATCH',
+      headers: authHeaders(pin),
+      body: JSON.stringify({ active: !s.active }),
+    });
+    if (res.ok) {
+      showToast('ok', s.active ? 'Pasif edildi' : 'Aktif edildi');
+      await load();
+    } else {
+      showToast('err', 'Güncellenemedi');
+    }
+  };
+
+  // Sayısal sıraya göre göster
+  const sorted = [...list].sort((a, b) => a.time.localeCompare(b.time));
+
+  return (
+    <section>
+      <div className="admin-section-head">
+        <div>
+          <h2>Randevu Saatleri</h2>
+          <p>Müşterilere randevu sırasında gösterilecek saatleri ekle/çıkar.</p>
+        </div>
+      </div>
+
+      <form className="slots-add" onSubmit={addSlot}>
+        <input
+          type="time"
+          value={newTime}
+          onChange={(e) => setNewTime(e.target.value)}
+          className="slots-add-input"
+          required
+        />
+        <button
+          type="submit"
+          className="admin-btn-primary"
+          disabled={!newTime || adding}
+        >
+          + Saat Ekle
+        </button>
+      </form>
+
+      {loading ? (
+        <div className="admin-loading">Yükleniyor…</div>
+      ) : sorted.length === 0 ? (
+        <div className="admin-empty">
+          Henüz saat eklenmemiş. Yukarıdaki kutudan saat ekleyin.
+        </div>
+      ) : (
+        <div className="slots-grid">
+          {sorted.map((s) => (
+            <div key={s.id} className={`slot-chip ${!s.active ? 'inactive' : ''}`}>
+              <span className="slot-chip-time">{s.time}</span>
+              <span className={`slot-chip-state ${s.active ? 'on' : 'off'}`}>
+                {s.active ? 'Aktif' : 'Pasif'}
+              </span>
+              <div className="slot-chip-actions">
+                <button
+                  className="slot-chip-toggle"
+                  onClick={() => toggle(s)}
+                  title={s.active ? 'Gizle' : 'Aktif et'}
+                  aria-label={s.active ? 'Gizle' : 'Aktif et'}
+                >
+                  {s.active ? '◐' : '○'}
+                </button>
+                <button
+                  className="slot-chip-del"
+                  onClick={() => remove(s.id, s.time)}
+                  title="Sil"
+                  aria-label="Sil"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
