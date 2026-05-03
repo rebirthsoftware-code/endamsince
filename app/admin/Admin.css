@@ -768,3 +768,92 @@
 }
 .slot-chip-toggle:hover { color: var(--a-orange); border-color: var(--a-orange); }
 .slot-chip-del:hover { color: var(--a-red); border-color: var(--a-red); background: #FEF2F2; }
+
+/* ══════════════════════════════
+   IMAGE UPLOAD
+   ══════════════════════════════ */
+.img-upload { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.img-upload-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 1.6rem 1rem;
+  background: #FAFAFA;
+  border: 1.5px dashed var(--a-border-strong);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+  width: 100%;
+  color: var(--a-text-mid);
+}
+.img-upload-empty:hover {
+  background: rgba(232,89,26,0.04);
+  border-color: var(--a-orange);
+  color: var(--a-orange);
+}
+.img-upload-empty:disabled { opacity: 0.6; cursor: default; }
+.img-upload-icon { font-size: 1.6rem; }
+.img-upload-empty strong {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--a-text);
+}
+.img-upload-empty small {
+  font-size: 0.75rem;
+  color: var(--a-text-muted);
+}
+
+.img-upload-preview {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f3f3f3;
+  border: 1px solid var(--a-border);
+}
+.img-upload-preview img {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+}
+.img-upload-actions {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  background: #fff;
+  border-top: 1px solid var(--a-border);
+}
+.img-upload-change,
+.img-upload-remove {
+  flex: 1;
+  padding: 0.55rem 0.8rem;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid var(--a-border-strong);
+  background: #fff;
+}
+.img-upload-change { color: var(--a-text-mid); }
+.img-upload-change:hover { color: var(--a-orange); border-color: var(--a-orange); }
+.img-upload-remove { color: var(--a-red); border-color: #FECACA; }
+.img-upload-remove:hover { background: #FEF2F2; border-color: var(--a-red); }
+.img-upload-change:disabled,
+.img-upload-remove:disabled { opacity: 0.6; cursor: default; }
+
+.img-upload-err {
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  background: rgba(220,38,38,0.08);
+  border: 1px solid rgba(220,38,38,0.2);
+  border-radius: 8px;
+  color: #B91C1C;
+  font-size: 0.82rem;
+  font-weight: 500;
+}

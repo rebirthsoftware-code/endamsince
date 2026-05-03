@@ -471,6 +471,7 @@ function PersonnelTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'er
         <PersonnelModal
           initial={editing}
           branches={branches}
+          pin={pin}
           onClose={() => { setEditing(null); setCreating(false); }}
           onSave={(d) => save(d, editing?.id)}
         />
@@ -480,10 +481,11 @@ function PersonnelTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'er
 }
 
 function PersonnelModal({
-  initial, branches, onClose, onSave,
+  initial, branches, pin, onClose, onSave,
 }: {
   initial: Personnel | null;
   branches: Branch[];
+  pin: string;
   onClose: () => void;
   onSave: (data: Partial<Personnel>) => void;
 }) {
@@ -519,9 +521,13 @@ function PersonnelModal({
               {branches.map((b) => <option key={b.id} value={b.id}>{b.name} — {b.location}</option>)}
             </select>
           </Field>
-          <Field label="Profil Foto URL (opsiyonel)">
-            <input value={form.image ?? ''} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://..." />
-          </Field>
+          <ImageUpload
+            value={form.image ?? ''}
+            onChange={(url) => setForm({ ...form, image: url })}
+            pin={pin}
+            folder="personnel"
+            label="Profil Fotoğrafı (opsiyonel)"
+          />
           <Field label="PIN Kodu (panele giriş için)" required>
             <input value={form.pinCode} onChange={(e) => setForm({ ...form, pinCode: e.target.value })} required maxLength={8} />
           </Field>
@@ -593,6 +599,7 @@ function BranchesTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err
       {editing && (
         <BranchModal
           initial={editing}
+          pin={pin}
           onClose={() => setEditing(null)}
           onSave={(d) => save(d, editing.id)}
         />
@@ -602,9 +609,10 @@ function BranchesTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err
 }
 
 function BranchModal({
-  initial, onClose, onSave,
+  initial, pin, onClose, onSave,
 }: {
   initial: Branch;
+  pin: string;
   onClose: () => void;
   onSave: (data: Partial<Branch>) => void;
 }) {
@@ -633,9 +641,13 @@ function BranchModal({
           <Field label="Konum" required>
             <input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} required />
           </Field>
-          <Field label="Görsel URL">
-            <input value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://..." />
-          </Field>
+          <ImageUpload
+            value={form.image}
+            onChange={(url) => setForm({ ...form, image: url })}
+            pin={pin}
+            folder="branches"
+            label="Şube Görseli"
+          />
         </div>
 
         <footer className="admin-modal-foot">
@@ -801,5 +813,102 @@ function Field({ label, children, required }: { label: string; children: React.R
       <span>{label}{required && <em>*</em>}</span>
       {children}
     </label>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   IMAGE UPLOAD
+   ═══════════════════════════════════════════════ */
+
+function ImageUpload({
+  value, onChange, pin, folder = 'misc', label = 'Görsel',
+}: {
+  value: string;
+  onChange: (url: string) => void;
+  pin: string;
+  folder?: string;
+  label?: string;
+}) {
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [err, setErr] = useState('');
+
+  const upload = async (file: File) => {
+    setErr('');
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('folder', folder);
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        headers: { [HEADER]: pin },
+        body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErr(data.error || 'Yükleme başarısız');
+        return;
+      }
+      onChange(data.url);
+    } catch (e) {
+      setErr('Bağlantı hatası');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="admin-field">
+      <span>{label}</span>
+      <div className="img-upload">
+        {value ? (
+          <div className="img-upload-preview">
+            <img src={value} alt="" />
+            <div className="img-upload-actions">
+              <button
+                type="button"
+                className="img-upload-change"
+                onClick={() => inputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? 'Yükleniyor…' : 'Değiştir'}
+              </button>
+              <button
+                type="button"
+                className="img-upload-remove"
+                onClick={() => onChange('')}
+                disabled={uploading}
+              >
+                Kaldır
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="img-upload-empty"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+          >
+            <span className="img-upload-icon">📷</span>
+            <strong>{uploading ? 'Yükleniyor…' : 'Fotoğraf yükle'}</strong>
+            <small>JPG, PNG veya WEBP — en fazla 5MB</small>
+          </button>
+        )}
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) upload(f);
+            e.target.value = ''; // aynı dosyayı tekrar seçebilmek için
+          }}
+        />
+        {err && <p className="img-upload-err">{err}</p>}
+      </div>
+    </div>
   );
 }
