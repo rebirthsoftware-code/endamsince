@@ -14,10 +14,14 @@ export default function LoadingScreen() {
 
   const bgImgRef = useRef<HTMLDivElement>(null);
 
-  /* ── Scroll lock: body kaydırmasını loading bitene kadar engelle ── */
+  /* ── Scroll lock: html + body ikisine de uygula (tarayıcı farkları) ── */
   useEffect(() => {
+    document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+    };
   }, []);
 
   /* ── Phase 1: counter 0→100 in ~2.5s ── */
@@ -47,9 +51,14 @@ export default function LoadingScreen() {
   const handleClick = useCallback(() => {
     if (phase !== 'title' || clicked) return;
     setClicked(true);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     setPhase('scissors');                            // blades close
-    setTimeout(() => setPhase('scissors-open'), 900); // blades open
     setTimeout(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      setPhase('scissors-open');                     // blades open — sayfa burada görünür
+    }, 900);
+    setTimeout(() => {
+      document.documentElement.style.overflow = '';
       document.body.style.overflow = '';
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       setPhase('done');
