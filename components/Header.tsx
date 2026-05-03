@@ -26,7 +26,11 @@ export default function Header() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  useEffect(() => { document.body.style.overflow = open ? 'hidden' : ''; }, [open]);
+  useEffect(() => {
+    const v = open ? 'hidden' : '';
+    document.documentElement.style.overflow = v;
+    document.body.style.overflow = v;
+  }, [open]);
   useEffect(() => { setOpen(false); }, [pathname]);
 
   return (
