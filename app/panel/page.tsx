@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import PushSubscribeButton from '@/components/PushSubscribeButton';
 import './Panel.css';
 
 export default function Panel() {
@@ -79,6 +80,8 @@ export default function Panel() {
           <button className="btn btn-outline" onClick={() => setIsLoggedIn(false)}>Çıkış Yap</button>
         </div>
 
+        <PushSubscribeButton personnelId={selectedPersonnel} />
+
         <div className="appointments-grid">
           {appointments.length > 0 ? appointments.map(app => (
             <div key={app.id} className="card appointment-card">
@@ -88,7 +91,17 @@ export default function Panel() {
                   {app.status === 'PENDING' ? 'Bekliyor' : app.status === 'APPROVED' ? 'Onaylandı' : 'Reddedildi'}
                 </span>
               </div>
-              <p className="text-secondary mb-2">📞 {app.customerPhone}</p>
+              <div className="phone-row">
+                <span className="phone-icon">📞</span>
+                <span className="phone-num">{app.customerPhone}</span>
+                <a
+                  href={`tel:${(app.customerPhone || '').replace(/\s+/g, '')}`}
+                  className="btn btn-call"
+                  aria-label={`${app.customerName} numarasını ara`}
+                >
+                  Ara
+                </a>
+              </div>
               <p className="text-secondary mb-4">📅 {app.date} 🕒 {app.time}</p>
               
               {app.status === 'PENDING' && (

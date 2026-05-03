@@ -26,3 +26,81 @@
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.5rem;
 }
+
+.phone-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.4rem 0 0.6rem;
+  flex-wrap: wrap;
+}
+.phone-icon { font-size: 0.95rem; }
+.phone-num {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  color: var(--text-mid, #555);
+  letter-spacing: 0.02em;
+  flex: 1 1 auto;
+  min-width: 0;
+  word-break: break-all;
+}
+.btn-call {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.95rem;
+  background: var(--orange, #E8591A);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+.btn-call::before { content: '📞'; font-size: 0.9rem; }
+.btn-call:hover { background: #d44d12; transform: translateY(-1px); }
+.btn-call:active { transform: translateY(0); }
+
+/* ── Push subscribe box ── */
+.push-box {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.5rem;
+  background: rgba(232, 89, 26, 0.07);
+  border: 1px solid rgba(232, 89, 26, 0.25);
+  border-radius: 12px;
+  flex-wrap: wrap;
+}
+.push-box-warn {
+  background: rgba(212, 175, 55, 0.07);
+  border-color: rgba(212, 175, 55, 0.3);
+  color: var(--text-mid, #555);
+  font-size: 0.95rem;
+}
+.push-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.push-text strong {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-dark, #1a1a1a);
+}
+.push-text span {
+  font-size: 0.85rem;
+  color: var(--text-mid, #555);
+}
+.push-msg {
+  font-size: 0.82rem;
+  color: var(--orange, #E8591A);
+  margin-left: auto;
+}

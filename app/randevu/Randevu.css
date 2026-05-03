@@ -122,3 +122,67 @@
   from { transform: scale(0); }
   to   { transform: scale(1); }
 }
+
+/* ── Saat slotları ── */
+.time-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 0.7rem;
+  margin-top: 0.4rem;
+}
+.time-slot {
+  position: relative;
+  padding: 0.95rem 0.5rem;
+  background: #fff;
+  border: 1.5px solid var(--border, #e5e5e5);
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-dark, #1a1a1a);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+.time-slot:hover:not(:disabled) {
+  border-color: var(--orange, #E8591A);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(232,89,26,0.15);
+}
+.time-slot.selected {
+  background: var(--orange, #E8591A);
+  border-color: var(--orange, #E8591A);
+  color: #fff;
+}
+.time-slot.taken {
+  background: #f5f5f5;
+  border-color: #e0e0e0;
+  color: #aaa;
+  cursor: not-allowed;
+  text-decoration: line-through;
+  text-decoration-color: rgba(0,0,0,0.25);
+}
+.time-slot-hr { font-weight: 600; letter-spacing: 0.04em; }
+.time-slot-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #c44;
+  text-decoration: none;
+}
+.time-slot.selected .time-slot-badge { color: #fff; }
+
+/* ── Hata kutusu ── */
+.error-box {
+  padding: 0.85rem 1rem;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  border-radius: 8px;
+  color: #b91c1c;
+  font-size: 0.92rem;
+  font-weight: 500;
+}

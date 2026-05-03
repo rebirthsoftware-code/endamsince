@@ -16,14 +16,27 @@ model Branch {
 }
 
 model Personnel {
-  id           String        @id @default(cuid())
-  name         String
-  role         String
-  image        String?
-  pinCode      String        // For login to the panel
-  branchId     String
-  branch       Branch        @relation(fields: [branchId], references: [id])
-  appointments Appointment[]
+  id            String             @id @default(cuid())
+  name          String
+  role          String
+  image         String?
+  pinCode       String             // For login to the panel
+  branchId      String
+  branch        Branch             @relation(fields: [branchId], references: [id])
+  appointments  Appointment[]
+  subscriptions PushSubscription[]
+}
+
+model PushSubscription {
+  id          String    @id @default(cuid())
+  endpoint    String    @unique
+  p256dh      String
+  auth        String
+  personnelId String
+  personnel   Personnel @relation(fields: [personnelId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@index([personnelId])
 }
 
 model Appointment {
