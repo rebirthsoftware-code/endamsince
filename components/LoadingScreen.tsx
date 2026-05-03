@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import './LoadingScreen.css';
 
@@ -7,7 +8,13 @@ type Phase = 'loading' | 'tagline' | 'title' | 'scissors' | 'scissors-open' | 'd
 
 const TAGLINE = 'Ustanın elinden geçen her tıraş,\nbir sanat eseridir.';
 
+/** Loading ekranının gösterilmediği rotalar (PWA/standalone deneyim için) */
+const SKIP_ROUTES = ['/panel'];
+
 export default function LoadingScreen() {
+  const pathname = usePathname();
+  const skip = SKIP_ROUTES.some(r => pathname === r || pathname?.startsWith(r + '/'));
+
   const [count,   setCount]   = useState(1);
   const [phase,   setPhase]   = useState<Phase>('loading');
   const [clicked, setClicked] = useState(false);
@@ -16,13 +23,14 @@ export default function LoadingScreen() {
 
   /* ── Scroll lock: html + body ikisine de uygula (tarayıcı farkları) ── */
   useEffect(() => {
+    if (skip) return;
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
     return () => {
       document.documentElement.style.overflow = '';
       document.body.style.overflow = '';
     };
-  }, []);
+  }, [skip]);
 
   /* ── Phase 1: counter 0→100 in ~2.5s ── */
   useEffect(() => {
@@ -82,7 +90,7 @@ export default function LoadingScreen() {
     return () => window.removeEventListener('mousemove', onMouseMove);
   }, [phase]);
 
-  if (phase === 'done') return null;
+  if (skip || phase === 'done') return null;
 
   return (
     <div

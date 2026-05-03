@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import PushSubscribeButton from '@/components/PushSubscribeButton';
 import './Panel.css';
 
+const SESSION_KEY = 'endamsince_panel_session_v1';
+
 export default function Panel() {
   const [personnelList, setPersonnelList] = useState<any[]>([]);
   const [selectedPersonnel, setSelectedPersonnel] = useState<string>('');
@@ -11,12 +13,33 @@ export default function Panel() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [error, setError] = useState('');
+  const [sessionChecked, setSessionChecked] = useState(false);
 
   useEffect(() => {
     fetch('/api/personnel')
       .then(res => res.json())
       .then(data => setPersonnelList(data))
       .catch(console.error);
+  }, []);
+
+  /* ── Kalıcı oturum: önceden giriş yapılmışsa otomatik yükle ── */
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (raw) {
+        const { personnelId } = JSON.parse(raw);
+        if (personnelId) {
+          setSelectedPersonnel(personnelId);
+          setIsLoggedIn(true);
+          fetchAppointments(personnelId);
+        }
+      }
+    } catch (_) {
+      /* localStorage erişimi yoksa veya parse edilemiyorsa giriş ekranı gösterilir */
+    } finally {
+      setSessionChecked(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -32,6 +55,12 @@ export default function Panel() {
       
       if (res.ok) {
         setIsLoggedIn(true);
+        try {
+          localStorage.setItem(
+            SESSION_KEY,
+            JSON.stringify({ personnelId: selectedPersonnel, at: Date.now() })
+          );
+        } catch (_) {}
         fetchAppointments(selectedPersonnel);
       } else {
         setError('Hatalı PIN kodu veya personel.');
@@ -68,6 +97,11 @@ export default function Panel() {
     }
   };
 
+  // Session kontrolü tamamlanmadan giriş formu flash etmesin
+  if (!sessionChecked) {
+    return <div className="container section" style={{ minHeight: '80vh' }} />;
+  }
+
   if (isLoggedIn) {
     const person = personnelList.find(p => p.id === selectedPersonnel);
     return (
@@ -77,7 +111,18 @@ export default function Panel() {
             <h1 className="heading-2">Hoş Geldin, <span className="text-gold">{person?.name}</span></h1>
             <p className="text-secondary">Randevularınızı buradan yönetebilirsiniz.</p>
           </div>
-          <button className="btn btn-outline" onClick={() => setIsLoggedIn(false)}>Çıkış Yap</button>
+          <button
+            className="btn btn-outline"
+            onClick={() => {
+              try { localStorage.removeItem(SESSION_KEY); } catch (_) {}
+              setIsLoggedIn(false);
+              setSelectedPersonnel('');
+              setPinCode('');
+              setAppointments([]);
+            }}
+          >
+            Çıkış Yap
+          </button>
         </div>
 
         <PushSubscribeButton personnelId={selectedPersonnel} />
