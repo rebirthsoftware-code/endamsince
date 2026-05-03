@@ -14,6 +14,12 @@ export default function LoadingScreen() {
 
   const bgImgRef = useRef<HTMLDivElement>(null);
 
+  /* ── Scroll lock: body kaydırmasını loading bitene kadar engelle ── */
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
   /* ── Phase 1: counter 0→100 in ~2.5s ── */
   useEffect(() => {
     const DURATION = 2500;
@@ -44,8 +50,9 @@ export default function LoadingScreen() {
     setPhase('scissors');                            // blades close
     setTimeout(() => setPhase('scissors-open'), 900); // blades open
     setTimeout(() => {
+      document.body.style.overflow = '';
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       setPhase('done');
-      // — signal to HomeAnimations that the intro is finished —
       window.dispatchEvent(new Event('ls:done'));
     }, 1820);
   }, [phase, clicked]);
