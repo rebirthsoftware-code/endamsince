@@ -393,9 +393,10 @@
   padding: 0.3rem 0.65rem;
   border-radius: 999px;
 }
-.appt-status-pending  { background: rgba(245,158,11,0.12); color: #B45309; }
-.appt-status-approved { background: rgba(22,163,74,0.12); color: #15803D; }
-.appt-status-rejected { background: rgba(220,38,38,0.12); color: #B91C1C; }
+.appt-status-pending   { background: rgba(245,158,11,0.12); color: #B45309; }
+.appt-status-approved  { background: rgba(22,163,74,0.12); color: #15803D; }
+.appt-status-rejected  { background: rgba(220,38,38,0.12); color: #B91C1C; }
+.appt-status-cancelled { background: rgba(107,114,128,0.14); color: #4B5563; }
 
 .appt-phone {
   display: flex;
@@ -463,7 +464,38 @@
   border-color: var(--p-green);
 }
 .appt-btn-approve:hover { background: #15803D; border-color: #15803D; }
+.appt-btn-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: #fff;
+  border-color: var(--p-red);
+  color: var(--p-red);
+}
+.appt-btn-cancel:hover {
+  background: var(--p-red);
+  border-color: var(--p-red);
+  color: #fff;
+}
+.appt-btn-cancel span { font-size: 0.78rem; line-height: 1; }
 .appt-btn:active { transform: scale(0.98); }
+
+/* İptal edilmiş randevu kartı: solgun + üzerine ince çizgi */
+.appt-card.status-cancelled {
+  opacity: 0.7;
+}
+.appt-card.status-cancelled .appt-name,
+.appt-card.status-cancelled .appt-time,
+.appt-card.status-cancelled .appt-date {
+  text-decoration: line-through;
+  text-decoration-color: rgba(0, 0, 0, 0.25);
+  text-decoration-thickness: 1px;
+}
+.appt-card.status-cancelled .appt-side { background: #6B7280; }
+.appt-card.status-rejected .appt-side { background: var(--p-red); }
+.appt-card.status-approved .appt-side { background: var(--p-green); }
+.appt-card.status-pending .appt-side  { background: var(--p-amber, #F59E0B); }
 
 /* ══════════════════════════════
    EMPTY STATE

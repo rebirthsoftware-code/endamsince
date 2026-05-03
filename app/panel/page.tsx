@@ -14,7 +14,7 @@ type Appointment = {
   customerPhone: string;
   date: string;
   time: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
   createdAt?: string;
 };
 type Filter = 'all' | 'pending' | 'today' | 'week' | 'approved';
@@ -23,6 +23,7 @@ const STATUS_LABEL: Record<Appointment['status'], string> = {
   PENDING: 'Bekliyor',
   APPROVED: 'Onaylandı',
   REJECTED: 'Reddedildi',
+  CANCELLED: 'İptal Edildi',
 };
 
 function todayISO(): string {
@@ -346,6 +347,13 @@ function AppointmentCard({
   onUpdate: (id: string, status: Appointment['status']) => void;
 }) {
   const phoneClean = (appt.customerPhone || '').replace(/\s+/g, '');
+
+  const handleCancel = () => {
+    if (confirm(`${appt.customerName} - ${formatDate(appt.date)} ${appt.time} randevusunu iptal etmek istediğinize emin misiniz?`)) {
+      onUpdate(appt.id, 'CANCELLED');
+    }
+  };
+
   return (
     <li className={`appt-card status-${appt.status.toLowerCase()}`}>
       <div className="appt-side" aria-hidden />
@@ -388,6 +396,17 @@ function AppointmentCard({
               onClick={() => onUpdate(appt.id, 'APPROVED')}
             >
               Onayla
+            </button>
+          </div>
+        )}
+
+        {appt.status === 'APPROVED' && (
+          <div className="appt-actions">
+            <button
+              className="appt-btn appt-btn-cancel"
+              onClick={handleCancel}
+            >
+              <span aria-hidden>✕</span> Randevuyu İptal Et
             </button>
           </div>
         )}
