@@ -33,13 +33,24 @@ type Branch = {
   location: string;
   image?: string | null;
 };
-type Tab = 'services' | 'personnel' | 'branches' | 'slots';
+type Tab = 'services' | 'personnel' | 'branches' | 'slots' | 'gallery';
 
 type TimeSlot = {
   id: string;
   time: string;
   order: number;
   active: boolean;
+};
+
+type GalleryItem = {
+  id: string;
+  url: string;
+  title: string | null;
+  category: string | null;
+  width: number | null;
+  height: number | null;
+  active: boolean;
+  order: number;
 };
 
 function authHeaders(pin: string): HeadersInit {
@@ -177,6 +188,13 @@ export default function AdminPage() {
             <span className="admin-tab-icon">🕒</span>
             Saatler
           </button>
+          <button
+            className={`admin-tab ${tab === 'gallery' ? 'active' : ''}`}
+            onClick={() => setTab('gallery')}
+          >
+            <span className="admin-tab-icon">🖼️</span>
+            Galeri
+          </button>
         </nav>
       </header>
 
@@ -185,6 +203,7 @@ export default function AdminPage() {
         {tab === 'personnel' && <PersonnelTab pin={authPin} showToast={showToast} />}
         {tab === 'branches'  && <BranchesTab pin={authPin} showToast={showToast} />}
         {tab === 'slots'     && <SlotsTab pin={authPin} showToast={showToast} />}
+        {tab === 'gallery'   && <GalleryTab pin={authPin} showToast={showToast} />}
       </main>
 
       {toast && (
@@ -800,6 +819,235 @@ function SlotsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', 
         </div>
       )}
     </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   GALLERY TAB
+   ═══════════════════════════════════════════════ */
+
+function GalleryTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', m: string) => void }) {
+  const [list, setList] = useState<GalleryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [editing, setEditing] = useState<GalleryItem | null>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/gallery', { headers: authHeaders(pin) });
+      if (res.ok) setList(await res.json());
+    } finally {
+      setLoading(false);
+    }
+  }, [pin]);
+  useEffect(() => { load(); }, [load]);
+
+  const uploadFiles = async (files: FileList) => {
+    setUploading(true);
+    let added = 0;
+    let failed = 0;
+    for (const file of Array.from(files)) {
+      try {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('folder', 'gallery');
+        const upRes = await fetch('/api/admin/upload', {
+          method: 'POST',
+          headers: { [HEADER]: pin },
+          body: fd,
+        });
+        if (!upRes.ok) { failed++; continue; }
+        const { url } = await upRes.json();
+
+        // Boyutları al (lightbox için)
+        let width: number | undefined, height: number | undefined;
+        await new Promise<void>((resolve) => {
+          const img = new Image();
+          img.onload = () => { width = img.naturalWidth; height = img.naturalHeight; resolve(); };
+          img.onerror = () => resolve();
+          img.src = url;
+        });
+
+        const order = list.length + added + 1;
+        const cRes = await fetch('/api/admin/gallery', {
+          method: 'POST',
+          headers: authHeaders(pin),
+          body: JSON.stringify({ url, width, height, order }),
+        });
+        if (cRes.ok) added++;
+        else failed++;
+      } catch (_) {
+        failed++;
+      }
+    }
+    setUploading(false);
+    if (added > 0) showToast('ok', `${added} fotoğraf eklendi`);
+    if (failed > 0) showToast('err', `${failed} fotoğraf yüklenemedi`);
+    if (added > 0) await load();
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm('Bu fotoğrafı galeriden silmek istiyor musunuz?')) return;
+    const res = await fetch(`/api/admin/gallery/${id}`, {
+      method: 'DELETE',
+      headers: authHeaders(pin),
+    });
+    if (res.ok) { showToast('ok', 'Silindi'); await load(); }
+    else showToast('err', 'Silinemedi');
+  };
+
+  const toggle = async (g: GalleryItem) => {
+    const res = await fetch(`/api/admin/gallery/${g.id}`, {
+      method: 'PATCH',
+      headers: authHeaders(pin),
+      body: JSON.stringify({ active: !g.active }),
+    });
+    if (res.ok) { showToast('ok', g.active ? 'Gizlendi' : 'Yayında'); await load(); }
+    else showToast('err', 'Güncellenemedi');
+  };
+
+  const saveMeta = async (id: string, data: Partial<GalleryItem>) => {
+    const res = await fetch(`/api/admin/gallery/${id}`, {
+      method: 'PATCH',
+      headers: authHeaders(pin),
+      body: JSON.stringify(data),
+    });
+    if (res.ok) { showToast('ok', 'Güncellendi'); await load(); setEditing(null); }
+    else showToast('err', 'Güncellenemedi');
+  };
+
+  return (
+    <section>
+      <div className="admin-section-head">
+        <div>
+          <h2>Galeri</h2>
+          <p>Site galerinizdeki fotoğrafları yönetin. Birden çok fotoğraf birden seçebilirsiniz.</p>
+        </div>
+        <button
+          className="admin-btn-primary"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+        >
+          {uploading ? 'Yükleniyor…' : '+ Fotoğraf Ekle'}
+        </button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          multiple
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            if (e.target.files && e.target.files.length > 0) uploadFiles(e.target.files);
+            e.target.value = '';
+          }}
+        />
+      </div>
+
+      {loading ? (
+        <div className="admin-loading">Yükleniyor…</div>
+      ) : list.length === 0 ? (
+        <div className="admin-empty">
+          Henüz fotoğraf eklenmemiş. Yukarıdaki "+ Fotoğraf Ekle" ile başlayın.
+        </div>
+      ) : (
+        <div className="gal-grid">
+          {list.map((g) => (
+            <article key={g.id} className={`gal-item ${!g.active ? 'inactive' : ''}`}>
+              <img src={g.url} alt={g.title ?? 'Galeri'} loading="lazy" />
+              <div className="gal-item-overlay">
+                {g.title && <strong>{g.title}</strong>}
+                {g.category && <span>{g.category}</span>}
+              </div>
+              <div className="gal-item-toolbar">
+                <button
+                  className="gal-icon-btn"
+                  onClick={() => toggle(g)}
+                  title={g.active ? 'Gizle' : 'Yayınla'}
+                  aria-label={g.active ? 'Gizle' : 'Yayınla'}
+                >
+                  {g.active ? '◐' : '○'}
+                </button>
+                <button
+                  className="gal-icon-btn"
+                  onClick={() => setEditing(g)}
+                  title="Düzenle"
+                  aria-label="Düzenle"
+                >
+                  ✎
+                </button>
+                <button
+                  className="gal-icon-btn gal-icon-del"
+                  onClick={() => remove(g.id)}
+                  title="Sil"
+                  aria-label="Sil"
+                >
+                  ✕
+                </button>
+              </div>
+              {!g.active && <div className="gal-inactive-badge">Gizli</div>}
+            </article>
+          ))}
+        </div>
+      )}
+
+      {editing && (
+        <GalleryEditModal
+          item={editing}
+          onClose={() => setEditing(null)}
+          onSave={(d) => saveMeta(editing.id, d)}
+        />
+      )}
+    </section>
+  );
+}
+
+function GalleryEditModal({
+  item, onClose, onSave,
+}: {
+  item: GalleryItem;
+  onClose: () => void;
+  onSave: (data: Partial<GalleryItem>) => void;
+}) {
+  const [form, setForm] = useState({
+    title: item.title ?? '',
+    category: item.category ?? '',
+    order: item.order,
+  });
+  return (
+    <div className="admin-modal-bg" onClick={onClose}>
+      <form
+        className="admin-modal"
+        onClick={(e) => e.stopPropagation()}
+        onSubmit={(e) => { e.preventDefault(); onSave(form); }}
+      >
+        <header className="admin-modal-head">
+          <h3>Fotoğraf Bilgisi</h3>
+          <button type="button" className="admin-modal-close" onClick={onClose}>✕</button>
+        </header>
+        <div className="admin-modal-body">
+          <img
+            src={item.url}
+            alt=""
+            style={{ width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 10, marginBottom: 6 }}
+          />
+          <Field label="Başlık (opsiyonel)">
+            <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Örn: Klasik kesim" />
+          </Field>
+          <Field label="Kategori (opsiyonel)">
+            <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Örn: Saç, Sakal, Mekan" />
+          </Field>
+          <Field label="Sıra">
+            <input type="number" value={form.order} onChange={(e) => setForm({ ...form, order: Number(e.target.value) })} />
+          </Field>
+        </div>
+        <footer className="admin-modal-foot">
+          <button type="button" className="admin-btn-ghost" onClick={onClose}>İptal</button>
+          <button type="submit" className="admin-btn-primary">Kaydet</button>
+        </footer>
+      </form>
+    </div>
   );
 }
 

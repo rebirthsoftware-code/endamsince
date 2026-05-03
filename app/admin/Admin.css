@@ -857,3 +857,87 @@
   font-size: 0.82rem;
   font-weight: 500;
 }
+
+/* ══════════════════════════════
+   GALLERY GRID
+   ══════════════════════════════ */
+.gal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.6rem;
+}
+.gal-item {
+  position: relative;
+  background: #f3f3f3;
+  border: 1px solid var(--a-border);
+  border-radius: 12px;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  transition: all 0.2s ease;
+}
+.gal-item:hover { box-shadow: var(--a-shadow-md); transform: translateY(-2px); }
+.gal-item.inactive { opacity: 0.45; }
+.gal-item img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+.gal-item:hover img { transform: scale(1.04); }
+
+.gal-item-overlay {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 0.6rem 0.8rem;
+  background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+  color: #fff;
+  font-size: 0.78rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.gal-item:hover .gal-item-overlay { opacity: 1; }
+.gal-item-overlay strong { font-weight: 600; }
+.gal-item-overlay span { opacity: 0.8; font-size: 0.7rem; letter-spacing: 0.04em; }
+
+.gal-item-toolbar {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.gal-item:hover .gal-item-toolbar,
+.gal-item:focus-within .gal-item-toolbar { opacity: 1; }
+.gal-icon-btn {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.95);
+  border: 1px solid rgba(0,0,0,0.05);
+  color: var(--a-text);
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s ease;
+}
+.gal-icon-btn:hover { background: var(--a-orange); color: #fff; border-color: transparent; }
+.gal-icon-btn.gal-icon-del:hover { background: var(--a-red); }
+
+.gal-inactive-badge {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background: rgba(0,0,0,0.65);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+}

@@ -27,6 +27,20 @@ model Personnel {
   subscriptions PushSubscription[]
 }
 
+model GalleryItem {
+  id          String   @id @default(cuid())
+  url         String
+  title       String?
+  category    String?
+  width       Int?
+  height      Int?
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([active, order])
+}
+
 model TimeSlot {
   id        String   @id @default(cuid())
   time      String   @unique

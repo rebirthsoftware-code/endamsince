@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Cormorant_Garamond, Inter, Bebas_Neue, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -6,6 +7,39 @@ import CustomCursor from "@/components/CustomCursor";
 import LoadingScreen from "@/components/LoadingScreen";
 import PageAnimations from "@/components/PageAnimations";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+
+/* ── Tipografi sistemi: kurumsal kimlik
+   Display (büyük başlıklar): Playfair Display — modern editöryel serif
+   Serif (alıntı, ikincil): Cormorant Garamond — zarif italik
+   Sans (gövde, UI): Inter — okunabilir, modern
+   Accent (label, vurgu): Bebas Neue — sıkıştırılmış sans
+*/
+const fontPlayfair = Playfair_Display({
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700", "800"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-display",
+});
+const fontCormorant = Cormorant_Garamond({
+  subsets: ["latin", "latin-ext"],
+  weight: ["300", "400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-serif",
+});
+const fontInter = Inter({
+  subsets: ["latin", "latin-ext"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-sans",
+});
+const fontBebas = Bebas_Neue({
+  subsets: ["latin", "latin-ext"],
+  weight: ["400"],
+  display: "swap",
+  variable: "--font-accent",
+});
 
 export const metadata: Metadata = {
   title: { default: "Endamsince Erkek Kuaför", template: "%s | Endamsince" },
@@ -36,7 +70,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="tr">
+    <html
+      lang="tr"
+      className={`${fontPlayfair.variable} ${fontCormorant.variable} ${fontInter.variable} ${fontBebas.variable}`}
+    >
       <body>
         <ServiceWorkerRegister />
         <PageAnimations />
