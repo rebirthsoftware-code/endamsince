@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 
 const MARQUEE = "ERKEK BAKIMI • ZİRVE DENEYİMİ • KLASİK USTURA • MODERN KESİM • ENDAMSINCE ZONGULDAK • ".repeat(5).split('•');
 
-const SERVICES = [
+const FALLBACK_SERVICES = [
   { num: '01', title: 'Saç Tasarımı',          price: '₺350', desc: 'Yüz hatlarınıza özel modern kesimler.' },
   { num: '02', title: 'Klasik Tıraş',          price: '₺280', desc: 'Geleneksel ustura ritueli.' },
   { num: '03', title: 'Sakal Şekillendirme',   price: '₺200', desc: 'Ustura & modern teknikler.' },
@@ -26,18 +26,33 @@ const PRODUCTS_PREVIEW = [
 export default async function HomePage() {
   let branches: any[] = [];
   let personnel: any[] = [];
+  let dbServices: any[] = [];
 
   try {
-    branches  = await prisma.branch.findMany();
-    personnel = await prisma.personnel.findMany({ include: { branch: true } });
+    branches   = await prisma.branch.findMany();
+    personnel  = await prisma.personnel.findMany({ include: { branch: true } });
+    dbServices = await prisma.service.findMany({
+      where: { active: true },
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+      take: 4,
+    });
   } catch (error) {
     console.error("Database connection failed. Showing fallback content.", error);
-    // Fallback data if DB is not reachable
     branches = [
-      { id: 'f1', name: 'Zonguldak Merkez', location: 'Zonguldak, Merkez' },
-      { id: 'f2', name: 'Ereğli Şube', location: 'Zonguldak, Ereğli' }
+      { id: 'f1', name: 'Endam Plus',  location: 'Zonguldak Merkez' },
+      { id: 'f2', name: 'Endam Urban', location: 'Zonguldak' }
     ];
   }
+
+  // Anasayfada gösterilecek hizmet listesi (DB → fallback)
+  const SERVICES = dbServices.length > 0
+    ? dbServices.map((s, i) => ({
+        num: String(i + 1).padStart(2, '0'),
+        title: s.name,
+        price: s.price,
+        desc: s.description || '',
+      }))
+    : FALLBACK_SERVICES;
 
   return (
     <>

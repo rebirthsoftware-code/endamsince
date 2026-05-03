@@ -9,7 +9,7 @@ type Phase = 'loading' | 'tagline' | 'title' | 'scissors' | 'scissors-open' | 'd
 const TAGLINE = 'Ustanın elinden geçen her tıraş,\nbir sanat eseridir.';
 
 /** Loading ekranının gösterilmediği rotalar (PWA/standalone deneyim için) */
-const SKIP_ROUTES = ['/panel'];
+const SKIP_ROUTES = ['/panel', '/admin'];
 
 export default function LoadingScreen() {
   const pathname = usePathname();
