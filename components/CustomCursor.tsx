@@ -1,11 +1,17 @@
 'use client';
 import React, { useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
+
+const CURSOR_HIDDEN = ['/panel', '/admin'];
 
 export default function CustomCursor() {
+  const pathname = usePathname();
+  const hidden = CURSOR_HIDDEN.some(r => pathname === r || pathname?.startsWith(r + '/'));
   const dotRef  = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (hidden) return;
     if (window.matchMedia('(pointer: coarse)').matches) return;
 
     const dot  = dotRef.current;
@@ -45,6 +51,8 @@ export default function CustomCursor() {
       cancelAnimationFrame(rafId);
     };
   }, []);
+
+  if (hidden) return null;
 
   return (
     <>

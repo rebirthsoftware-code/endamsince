@@ -42,9 +42,9 @@
   --t-slow:  0.9s cubic-bezier(0.16, 1, 0.3, 1);
   --t-expo:  0.8s cubic-bezier(0.76, 0, 0.24, 1);
 
-  --font-serif:   'Cormorant Garamond', Georgia, serif;
-  --font-sans:    'Inter', system-ui, sans-serif;
-  --font-display: 'Bebas Neue', sans-serif;
+  /* Tipografi: --font-display/serif/sans/accent değişkenleri
+     <html> üzerinde next/font/google tarafından sağlanır.
+     Burada sadece global stilizasyon yapılır, override edilmez. */
 }
 
 /* =========================================
@@ -75,33 +75,42 @@ h1,h2,h3,h4,h5,h6 {
   color: var(--text-dark);
 }
 
-/* Display — cinematic big text */
+/* Display — sinematik büyük başlıklar (Playfair Display) */
 .h-display {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: clamp(3rem, 8vw, 9rem);
-  font-weight: 300;
-  letter-spacing: -0.02em;
+  font-weight: 500;
+  letter-spacing: -0.025em;
   line-height: 0.92;
 }
 .h-hero {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: clamp(2.8rem, 8vw, 8rem);
-  font-weight: 300;
+  font-weight: 500;
   line-height: 0.95;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
 }
 .h-section {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: clamp(2rem, 4vw, 5rem);
-  font-weight: 300;
-  letter-spacing: -0.02em;
+  font-weight: 500;
+  letter-spacing: -0.025em;
   line-height: 1.0;
 }
 .h-card {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: clamp(1.4rem, 2vw, 2.2rem);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+/* Italic vurgu — kurumsal "kelime tonlaması" için */
+.h-display em,
+.h-hero em,
+.h-section em,
+.h-card em {
+  font-style: italic;
+  font-family: var(--font-serif);
   font-weight: 400;
-  letter-spacing: -0.01em;
 }
 
 /* Spaced display label (Ivress style: S P I N  A  T A L E) */

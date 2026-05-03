@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { PrismaClient } from '@prisma/client';
 import './hizmetler.css';
 
 export const metadata: Metadata = {
@@ -7,63 +8,27 @@ export const metadata: Metadata = {
   description: 'Endamsince\'nin sunduğu premium erkek bakım hizmetleri. Saç kesimi, sakal tıraşı, cilt bakımı ve daha fazlası.',
 };
 
-const SERVICES = [
-  {
-    id: 1,
-    icon: '✂️',
-    title: 'Saç Tasarımı',
-    price: '350₺',
-    duration: '45 dk',
-    desc: 'Yüz hatlarınıza ve saç yapınıza en uygun modern saç kesimleri. Stilistimiz ilk olarak yüz analizinizi yaparak en doğru kesim seçeneğini belirler.',
-    features: ['Saç analizi ve danışmanlık', 'Wash & Cut dahil', 'Şekillendirme ve finish', 'Bakım önerileri'],
-    popular: true,
-  },
-  {
-    id: 2,
-    icon: '🪒',
-    title: 'Klasik Ustura Tıraşı',
-    price: '280₺',
-    duration: '30 dk',
-    desc: 'Geleneksel tek kullanımlık ustura ile terleyici havlu ritüeli. Yüz masajı ve serinleme losyonu dahil.',
-    features: ['Sıcak havlu ritueli', 'Pre-shave yağı', 'Ustura tıraşı', 'After-shave bakımı'],
-  },
-  {
-    id: 3,
-    icon: '💈',
-    title: 'Sakal Şekillendirme',
-    price: '200₺',
-    duration: '25 dk',
-    desc: 'Yüz hatlarınıza en uygun sakal şeklini belirler, kesim ve bakımını profesyonelce yaparız.',
-    features: ['Sakal şekil danışmanlığı', 'Trimming & edging', 'Sakal yağı uygulaması', 'Şekil tıraşı'],
-  },
-  {
-    id: 4,
-    icon: '🧴',
-    title: 'Derin Yüz Bakımı',
-    price: '450₺',
-    duration: '60 dk',
-    desc: 'Erkek cildine özel derinlemesine temizlik, nemlendirme ve yenileme bakımı.',
-    features: ['Cilt tipi analizi', 'Derin gözenek temizliği', 'Serum & maske uygulaması', 'Masaj ve nemlendirme'],
-  },
-  {
-    id: 5,
-    icon: '🎨',
-    title: 'Renk & Beyaz Kapama',
-    price: '600₺+',
-    duration: '90 dk',
-    desc: 'Doğal görünümlü beyaz saç kapama ve modern saç renklendirme işlemleri.',
-    features: ['Saç renk analizi', 'Boyama uygulaması', 'Renk sabitleme bakımı', 'Kurutma & şekillendirme'],
-  },
-  {
-    id: 6,
-    icon: '💆',
-    title: 'Saç & Deri Bakımı',
-    price: '320₺',
-    duration: '50 dk',
-    desc: 'Saç dibi ve saç teli için kapsamlı besleyici bakım. Kepek ve kırılma karşıtı formüller.',
-    features: ['Kepek analizi', 'Saç dibi masajı', 'Keratin bakımı', 'Onarıcı maske'],
-  },
-];
+export const dynamic = 'force-dynamic';
+
+const prisma = new PrismaClient();
+
+type DbService = {
+  id: string; name: string; price: string; duration: string;
+  description: string; features: string[]; icon: string;
+  popular: boolean; active: boolean; order: number;
+};
+
+async function getServices(): Promise<DbService[]> {
+  try {
+    return await prisma.service.findMany({
+      where: { active: true },
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+    });
+  } catch (err) {
+    console.error('Hizmetler yüklenemedi:', err);
+    return [];
+  }
+}
 
 const PACKAGES = [
   {
@@ -92,7 +57,9 @@ const PACKAGES = [
   },
 ];
 
-export default function HizmetlerPage() {
+export default async function HizmetlerPage() {
+  const services = await getServices();
+
   return (
     <>
       {/* ─── PAGE HERO ─── */}
@@ -108,25 +75,31 @@ export default function HizmetlerPage() {
       <section className="section">
         <div className="container">
           <div className="services-detail-grid">
-            {SERVICES.map((s, i) => (
+            {services.length === 0 ? (
+              <p className="text-secondary" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem 0' }}>
+                Hizmetler yakında güncellenecek.
+              </p>
+            ) : services.map((s) => (
               <div key={s.id} className={`svc-detail-card card ${s.popular ? 'svc-popular' : ''}`}>
                 {s.popular && <div className="svc-popular-badge">En Popüler</div>}
                 <div className="svc-detail-head">
                   <span className="svc-detail-icon">{s.icon}</span>
                   <div>
-                    <h3>{s.title}</h3>
+                    <h3>{s.name}</h3>
                     <div className="svc-meta">
-                      <span>⏱ {s.duration}</span>
+                      {s.duration && <span>⏱ {s.duration}</span>}
                       <span className="text-orange svc-detail-price">{s.price}</span>
                     </div>
                   </div>
                 </div>
-                <p className="svc-detail-desc text-muted">{s.desc}</p>
-                <ul className="svc-features">
-                  {s.features.map((f) => (
-                    <li key={f}><span className="check">✓</span>{f}</li>
-                  ))}
-                </ul>
+                {s.description && <p className="svc-detail-desc text-muted">{s.description}</p>}
+                {s.features.length > 0 && (
+                  <ul className="svc-features">
+                    {s.features.map((f, i) => (
+                      <li key={i}><span className="check">✓</span>{f}</li>
+                    ))}
+                  </ul>
+                )}
                 <Link href="/randevu" className={`btn btn-sm ${s.popular ? 'btn-primary' : 'btn-outline'}`} style={{ marginTop: 'auto' }}>
                   Randevu Al
                 </Link>

@@ -19,12 +19,27 @@ function RandevuContent() {
   const [customerPhone, setCustomerPhone] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [takenTimes, setTakenTimes] = useState<string[]>([]);
+  const [submitError, setSubmitError] = useState<string>('');
+  const [allSlots, setAllSlots] = useState<string[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(true);
 
   useEffect(() => {
     fetch('/api/branches')
       .then(res => res.json())
       .then(data => setBranches(data))
       .catch(err => console.error(err));
+  }, []);
+
+  /* ── Aktif saat slotlarını çek ── */
+  useEffect(() => {
+    fetch('/api/time-slots')
+      .then(res => res.json())
+      .then(data => {
+        setAllSlots(Array.isArray(data?.slots) ? data.slots : []);
+      })
+      .catch(() => setAllSlots([]))
+      .finally(() => setSlotsLoading(false));
   }, []);
 
   useEffect(() => {
@@ -36,9 +51,24 @@ function RandevuContent() {
     }
   }, [selectedBranch]);
 
+  /* ── Dolu saat listesini personel + tarih değişince çek ── */
+  useEffect(() => {
+    if (!selectedPersonnel || !date) {
+      setTakenTimes([]);
+      return;
+    }
+    fetch(`/api/appointments?personnelId=${selectedPersonnel}&date=${date}`)
+      .then(res => res.json())
+      .then(data => setTakenTimes(data.takenTimes || []))
+      .catch(() => setTakenTimes([]));
+    // Tarih değiştiğinde önceden seçili saat hâlâ uygun mu kontrol et
+    setTime('');
+  }, [selectedPersonnel, date]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmitError('');
     try {
       const res = await fetch('/api/appointments', {
         method: 'POST',
@@ -53,9 +83,23 @@ function RandevuContent() {
       });
       if (res.ok) {
         setSuccess(true);
+      } else if (res.status === 409) {
+        const data = await res.json().catch(() => ({}));
+        setSubmitError(data.error || 'Bu saat artık dolu.');
+        // Dolu saat listesini yenile + saati temizle
+        if (selectedPersonnel && date) {
+          fetch(`/api/appointments?personnelId=${selectedPersonnel}&date=${date}`)
+            .then(r => r.json())
+            .then(d => setTakenTimes(d.takenTimes || []));
+        }
+        setTime('');
+        setStep(3);
+      } else {
+        setSubmitError('Randevu oluşturulamadı. Lütfen tekrar deneyin.');
       }
     } catch (error) {
       console.error(error);
+      setSubmitError('Bağlantı hatası. Lütfen tekrar deneyin.');
     }
     setIsSubmitting(false);
   };
@@ -151,17 +195,32 @@ function RandevuContent() {
             </div>
             <div className="input-group mt-6">
               <label className="input-label">Saat Seçin</label>
-              <select className="input-field input-lg" value={time} onChange={e => setTime(e.target.value)}>
-                <option value="">Lütfen saat seçiniz</option>
-                <option value="09:00">09:00</option>
-                <option value="10:00">10:00</option>
-                <option value="11:00">11:00</option>
-                <option value="13:00">13:00</option>
-                <option value="14:00">14:00</option>
-                <option value="15:00">15:00</option>
-                <option value="16:00">16:00</option>
-                <option value="17:00">17:00</option>
-              </select>
+              {!date ? (
+                <p className="text-secondary text-sm">Önce bir tarih seçin.</p>
+              ) : slotsLoading ? (
+                <p className="text-secondary text-sm">Saatler yükleniyor…</p>
+              ) : allSlots.length === 0 ? (
+                <p className="text-secondary text-sm">Şu anda uygun saat yok. Lütfen daha sonra tekrar deneyin.</p>
+              ) : (
+                <div className="time-slot-grid">
+                  {allSlots.map(slot => {
+                    const isTaken = takenTimes.includes(slot);
+                    const isSelected = time === slot;
+                    return (
+                      <button
+                        type="button"
+                        key={slot}
+                        disabled={isTaken}
+                        onClick={() => !isTaken && setTime(slot)}
+                        className={`time-slot ${isSelected ? 'selected' : ''} ${isTaken ? 'taken' : ''}`}
+                      >
+                        <span className="time-slot-hr">{slot}</span>
+                        {isTaken && <span className="time-slot-badge">Dolu</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
             <div className="flex-between mt-8 gap-4">
               <button className="btn btn-outline" onClick={prevStep}>Geri</button>
@@ -178,6 +237,12 @@ function RandevuContent() {
               <p className="text-sm text-secondary">Seçtiğiniz Randevu:</p>
               <p className="font-bold">{date} - Saat {time}</p>
             </div>
+
+            {submitError && (
+              <div className="error-box mb-4">
+                {submitError}
+              </div>
+            )}
 
             <div className="input-group">
               <label className="input-label">Adınız ve Soyadınız <span className="text-danger">*</span></label>
