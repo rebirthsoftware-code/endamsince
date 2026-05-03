@@ -62,13 +62,23 @@ export async function POST(request: Request) {
       },
     });
 
-    // İlgili personele push bildirim gönder (hata olursa randevu kaydı etkilenmesin)
-    sendPushToPersonnel(prisma, personnelId, {
-      title: 'Yeni Randevu',
-      body: `${customerName} — ${date} ${time}`,
-      tag: `appt-${appointment.id}`,
-      url: '/panel',
-    }).catch((e) => console.error('Push gönderilemedi:', e));
+    // İlgili personele push bildirim gönder.
+    // Vercel serverless function response döndüğünde çalışmayı sonlandırdığı
+    // için push'u burada AWAIT etmemiz gerekiyor. Aksi halde bildirim
+    // teslimi yarıda kesilebilir veya çok geç teslim edilir.
+    try {
+      const result = await sendPushToPersonnel(prisma, personnelId, {
+        title: 'Yeni Randevu',
+        body: `${customerName} — ${date} ${time}`,
+        tag: `appt-${appointment.id}`,
+        url: '/panel',
+      });
+      console.log(
+        `[push] personnel=${personnelId} appointment=${appointment.id} sent=${result.sent} removed=${result.removed}`
+      );
+    } catch (e) {
+      console.error('Push gönderilemedi:', e);
+    }
 
     return NextResponse.json(appointment, { status: 201 });
   } catch (error) {

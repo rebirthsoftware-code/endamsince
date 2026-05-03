@@ -43,7 +43,12 @@ export async function sendPushToPersonnel(
       try {
         await webpush.sendNotification(
           { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-          body
+          body,
+          {
+            // Hızlı teslim için yüksek urgency + kısa TTL
+            urgency: 'high',
+            TTL: 60,
+          }
         );
         sent++;
       } catch (err: any) {

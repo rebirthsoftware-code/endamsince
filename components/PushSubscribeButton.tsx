@@ -23,12 +23,26 @@ export default function PushSubscribeButton({ personnelId }: Props) {
     if (typeof window === 'undefined') return;
     const ok = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
     setSupported(ok);
-    if (!ok) return;
+    if (!ok || !personnelId) return;
     setPermission(Notification.permission);
-    navigator.serviceWorker.ready.then((reg) =>
-      reg.pushManager.getSubscription().then((sub) => setSubscribed(!!sub))
-    );
-  }, []);
+
+    // Bu cihazda mevcut subscription varsa, oturum açan personele bağlı
+    // olarak DB'yi otomatik senkronize et. Aksi takdirde bir önceki
+    // personele bildirim akmaya devam eder.
+    navigator.serviceWorker.ready.then(async (reg) => {
+      const sub = await reg.pushManager.getSubscription();
+      setSubscribed(!!sub);
+      if (sub) {
+        try {
+          await fetch('/api/panel/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ personnelId, subscription: sub.toJSON() }),
+          });
+        } catch (_) {}
+      }
+    });
+  }, [personnelId]);
 
   const enable = async () => {
     setBusy(true);
