@@ -121,6 +121,18 @@ const SITE_CONTENT: Array<{
   { key: 'ekip.career.title.2', value: 'Katılın',             label: 'Kariyer başlık 2 (turuncu)', group: 'ekip', order: 12 },
   { key: 'ekip.career.body',    value: 'Tutkulu ve yetenekli berber / stilistler arıyoruz. Endamsince ailesinin bir parçası olmak ve kariyerinizi zirveye taşımak için bizimle iletişime geçin.', label: 'Kariyer paragraf', group: 'ekip', order: 13, multiline: true },
 
+  // ── GALERI ──
+  { key: 'galeri.hero.label',           value: 'Endamsince · Atölye',         label: 'Hero üst etiket',  group: 'galeri', order: 1 },
+  { key: 'galeri.hero.title.1',         value: 'Bir',                          label: 'Hero başlık 1',    group: 'galeri', order: 2 },
+  { key: 'galeri.hero.title.2',         value: 'sanat',                        label: 'Hero başlık 2 (italik)', group: 'galeri', order: 3 },
+  { key: 'galeri.hero.title.3',         value: 'formu olarak',                 label: 'Hero başlık 3',    group: 'galeri', order: 4 },
+  { key: 'galeri.hero.title.4',         value: 'tıraş.',                       label: 'Hero başlık 4 (italik)', group: 'galeri', order: 5 },
+  { key: 'galeri.hero.body',            value: '45 yıllık ustalığın izleri, kapımızdan girer girmez kendinizi farklı hissettiren atmosfer ve her bir müşteriyle yazılan tarz hikayeleri.', label: 'Hero alt yazı', group: 'galeri', order: 6, multiline: true },
+  { key: 'galeri.hero.meta.items',      value: 'Eser',                         label: 'Meta - eser sayısı etiketi', group: 'galeri', order: 7 },
+  { key: 'galeri.hero.meta.branches',   value: 'Şube',                         label: 'Meta - şube etiketi',     group: 'galeri', order: 8 },
+  { key: 'galeri.hero.meta.year.value', value: '1979',                          label: 'Meta - kuruluş yılı',     group: 'galeri', order: 9 },
+  { key: 'galeri.hero.meta.year.label', value: 'Kuruluş',                       label: 'Meta - yıl etiketi',      group: 'galeri', order: 10 },
+
   // ── FOOTER ──
   { key: 'footer.brand.tagline', value: "Erkek bakımında 45 yıllık deneyim. 1979'dan bu yana Zonguldak'ın köklü berber zinciri.", label: 'Footer kısa açıklama', group: 'footer', order: 1, multiline: true },
   { key: 'footer.copyright',     value: '© 2026 Endamsince Erkek Kuaför. Tüm hakları saklıdır.', label: 'Telif yazısı', group: 'footer', order: 2 },

@@ -1304,6 +1304,7 @@ const CONTENT_GROUP_LABELS: Record<string, string> = {
   hizmetler: '✂️  Hizmetler',
   urunler:   '🧴 Ürünler',
   ekip:      '👥 Ekip',
+  galeri:    '🖼️  Galeri',
   footer:    '⬇️  Alt Bölüm',
 };
 
