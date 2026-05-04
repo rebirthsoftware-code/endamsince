@@ -1,77 +1,59 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PrismaClient } from '@prisma/client';
+import { getSiteContent, pick } from '@/lib/content';
 import './hizmetler.css';
 
 export const metadata: Metadata = {
   title: 'Hizmetler',
-  description: 'Endamsince\'nin sunduğu premium erkek bakım hizmetleri. Saç kesimi, sakal tıraşı, cilt bakımı ve daha fazlası.',
+  description: 'Endamsince\'nin sunduğu premium erkek bakım hizmetleri.',
 };
 
 export const dynamic = 'force-dynamic';
 
 const prisma = new PrismaClient();
 
-type DbService = {
-  id: string; name: string; price: string; duration: string;
-  description: string; features: string[]; icon: string;
-  popular: boolean; active: boolean; order: number;
-};
-
-async function getServices(): Promise<DbService[]> {
-  try {
-    return await prisma.service.findMany({
-      where: { active: true },
-      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
-    });
-  } catch (err) {
-    console.error('Hizmetler yüklenemedi:', err);
-    return [];
-  }
-}
-
-const PACKAGES = [
-  {
-    name: 'Basic',
-    price: '450₺',
-    icon: '✂️',
-    services: ['Saç Kesimi', 'Sakal Şekillendirme', 'Şampuan & Kurutma'],
-    popular: false,
-    color: 'var(--surface)',
-  },
-  {
-    name: 'Premium',
-    price: '780₺',
-    icon: '💈',
-    services: ['Saç Kesimi', 'Klasik Ustura Tıraşı', 'Sakal Şekillendirme', 'Yüz Bakımı', 'Şampuan & Masaj'],
-    popular: true,
-    color: 'var(--orange)',
-  },
-  {
-    name: 'VIP',
-    price: '1.200₺',
-    icon: '👑',
-    services: ['Tüm Premium Hizmetler', 'Renk Uygulaması', 'Keratin Bakımı', 'VIP Lounge', 'İçecek İkramı'],
-    popular: false,
-    color: 'var(--text-dark)',
-  },
-];
-
 export default async function HizmetlerPage() {
-  const services = await getServices();
+  const dict = await getSiteContent('hizmetler');
+
+  let services: any[] = [];
+  let packages: any[] = [];
+  let faqs: any[] = [];
+
+  try {
+    [services, packages, faqs] = await Promise.all([
+      prisma.service.findMany({
+        where: { active: true },
+        orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+      }),
+      prisma.package.findMany({
+        where: { active: true },
+        orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+      }),
+      prisma.faq.findMany({
+        where: { active: true },
+        orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+      }),
+    ]);
+  } catch (err) {
+    console.error('Hizmetler içerik yüklenemedi:', err);
+  }
 
   return (
     <>
-      {/* ─── PAGE HERO ─── */}
+      {/* HERO */}
       <div className="page-hero">
         <div className="container">
-          <span className="page-hero-label display">Ne Sunuyoruz</span>
-          <h1>Premium <span className="text-orange">Hizmetlerimiz</span></h1>
-          <p>Erkek bakımında sınırları zorluyoruz. Her hizmet uzman eller ve kaliteli ürünlerle sunulur.</p>
+          <span className="page-hero-label display">{pick(dict, 'hizmetler.hero.eyebrow', 'Ne Sunuyoruz')}</span>
+          <h1>
+            {pick(dict, 'hizmetler.hero.title.1', 'Premium')}{' '}
+            <span className="text-orange">{pick(dict, 'hizmetler.hero.title.2', 'Hizmetlerimiz')}</span>
+          </h1>
+          <p>{pick(dict, 'hizmetler.hero.body', 'Erkek bakımında sınırları zorluyoruz.')}</p>
         </div>
       </div>
 
-      {/* ─── SERVICES LIST ─── */}
+      {/* SERVICES LIST */}
       <section className="section">
         <div className="container">
           <div className="services-detail-grid">
@@ -95,7 +77,7 @@ export default async function HizmetlerPage() {
                 {s.description && <p className="svc-detail-desc text-muted">{s.description}</p>}
                 {s.features.length > 0 && (
                   <ul className="svc-features">
-                    {s.features.map((f, i) => (
+                    {s.features.map((f: string, i: number) => (
                       <li key={i}><span className="check">✓</span>{f}</li>
                     ))}
                   </ul>
@@ -109,61 +91,66 @@ export default async function HizmetlerPage() {
         </div>
       </section>
 
-      {/* ─── PACKAGES ─── */}
-      <section className="section" style={{ background: 'var(--surface)' }}>
-        <div className="container">
-          <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-            <p className="eyebrow" style={{ justifyContent: 'center' }}>Paketler</p>
-            <h2 className="h2">Kombine <span className="text-orange">Paketler</span></h2>
-            <p className="text-muted" style={{ marginTop: '0.8rem' }}>Birden fazla hizmeti birleştirerek daha avantajlı fiyatlardan yararlanın.</p>
+      {/* PACKAGES */}
+      {packages.length > 0 && (
+        <section className="section" style={{ background: 'var(--surface)' }}>
+          <div className="container">
+            <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
+              <p className="eyebrow" style={{ justifyContent: 'center' }}>{pick(dict, 'hizmetler.pkg.eyebrow', 'Paketler')}</p>
+              <h2 className="h2">
+                {pick(dict, 'hizmetler.pkg.title.1', 'Kombine')}{' '}
+                <span className="text-orange">{pick(dict, 'hizmetler.pkg.title.2', 'Paketler')}</span>
+              </h2>
+              <p className="text-muted" style={{ marginTop: '0.8rem' }}>{pick(dict, 'hizmetler.pkg.body', 'Birden fazla hizmeti birleştirerek daha avantajlı fiyatlardan yararlanın.')}</p>
+            </div>
+            <div className="packages-grid">
+              {packages.map((pkg) => (
+                <div key={pkg.id} className={`pkg-card ${pkg.popular ? 'pkg-popular' : ''}`}>
+                  {pkg.popular && <div className="pkg-badge">En Çok Tercih</div>}
+                  <div className="pkg-icon">{pkg.icon}</div>
+                  <h3 className="pkg-name">{pkg.name}</h3>
+                  <div className="pkg-price">{pkg.price}</div>
+                  <ul className="pkg-list">
+                    {pkg.services.map((svc: string) => (
+                      <li key={svc}><span className="check">✓</span>{svc}</li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/randevu"
+                    className={`btn btn-lg ${pkg.popular ? '' : 'btn-outline'}`}
+                    style={pkg.popular ? { background: 'var(--orange)', color: '#fff', border: 'none', width: '100%', justifyContent: 'center' } : { width: '100%', justifyContent: 'center' }}
+                  >
+                    Seç & Randevu Al
+                  </Link>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="packages-grid">
-            {PACKAGES.map((pkg) => (
-              <div key={pkg.name} className={`pkg-card ${pkg.popular ? 'pkg-popular' : ''}`}>
-                {pkg.popular && <div className="pkg-badge">En Çok Tercih</div>}
-                <div className="pkg-icon">{pkg.icon}</div>
-                <h3 className="pkg-name">{pkg.name}</h3>
-                <div className="pkg-price">{pkg.price}</div>
-                <ul className="pkg-list">
-                  {pkg.services.map((svc) => (
-                    <li key={svc}><span className="check">✓</span>{svc}</li>
-                  ))}
-                </ul>
-                <Link
-                  href="/randevu"
-                  className={`btn btn-lg ${pkg.popular ? '' : 'btn-outline'}`}
-                  style={pkg.popular ? { background: 'var(--orange)', color: '#fff', border: 'none', width: '100%', justifyContent: 'center' } : { width: '100%', justifyContent: 'center' }}
-                >
-                  Seç & Randevu Al
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* ─── FAQ ─── */}
-      <section className="section">
-        <div className="container">
-          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-            <p className="eyebrow" style={{ justifyContent: 'center' }}>Sıkça Sorulanlar</p>
-            <h2 className="h2">Merak <span className="text-orange">Ettikleriniz</span></h2>
+      {/* FAQ */}
+      {faqs.length > 0 && (
+        <section className="section">
+          <div className="container">
+            <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+              <p className="eyebrow" style={{ justifyContent: 'center' }}>{pick(dict, 'hizmetler.faq.eyebrow', 'Sıkça Sorulanlar')}</p>
+              <h2 className="h2">
+                {pick(dict, 'hizmetler.faq.title.1', 'Merak')}{' '}
+                <span className="text-orange">{pick(dict, 'hizmetler.faq.title.2', 'Ettikleriniz')}</span>
+              </h2>
+            </div>
+            <div className="faq-list">
+              {faqs.map((item) => (
+                <div key={item.id} className="faq-item card">
+                  <h3 className="faq-q">{item.question}</h3>
+                  <p className="faq-a text-muted">{item.answer}</p>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="faq-list">
-            {[
-              { q: 'Randevu almak zorunlu mu?', a: 'Randevu almanızı öneririz ancak müsaitlik durumuna göre randevusuz müşteriler de kabul edilir.' },
-              { q: 'Çocuklar için hizmet var mı?', a: 'Evet, 6 yaş ve üzeri çocuklar için özel indirimli saç kesimi hizmetimiz mevcuttur.' },
-              { q: 'Hangi ödeme yöntemleri kabul ediliyor?', a: 'Nakit, kredi kartı, banka kartı ve havale ile ödeme yapabilirsiniz.' },
-              { q: 'Alerji veya hassasiyetim var, bildirebilir miyim?', a: 'Kesinlikle. Randevu öncesi stilistinizi bilgilendirmenizi öneririz.' },
-            ].map((item, i) => (
-              <div key={i} className="faq-item card">
-                <h3 className="faq-q">{item.q}</h3>
-                <p className="faq-a text-muted">{item.a}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
     </>
   );
 }

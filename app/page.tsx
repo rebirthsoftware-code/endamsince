@@ -2,66 +2,67 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { PrismaClient } from '@prisma/client';
 import HomeAnimations from '@/components/HomeAnimations';
+import { getSiteContent, pick } from '@/lib/content';
 import './Page.css';
 
 export const dynamic = 'force-dynamic';
 
 const prisma = new PrismaClient();
 
-const MARQUEE = "ERKEK BAKIMI • ZİRVE DENEYİMİ • KLASİK USTURA • MODERN KESİM • ENDAMSINCE ZONGULDAK • ".repeat(5).split('•');
-
-const FALLBACK_SERVICES = [
-  { num: '01', title: 'Saç Tasarımı',          price: '₺350', desc: 'Yüz hatlarınıza özel modern kesimler.' },
-  { num: '02', title: 'Klasik Tıraş',          price: '₺280', desc: 'Geleneksel ustura ritueli.' },
-  { num: '03', title: 'Sakal Şekillendirme',   price: '₺200', desc: 'Ustura & modern teknikler.' },
-  { num: '04', title: 'Derin Yüz Bakımı',      price: '₺450', desc: 'Erkek cildine özel bakım.' },
-];
-
-const PRODUCTS_PREVIEW = [
-  { name: 'Black Gold Wax', sub: 'Güçlü Tutuş', img: 'https://images.unsplash.com/photo-1585238342024-78d387f4a707?w=600&q=85', badge: 'En Çok Satan' },
-  { name: 'Sakal Yağı',     sub: 'Argan + Jojoba', img: 'https://images.unsplash.com/photo-1621607512022-6aecc4fed814?w=600&q=85', badge: 'Yeni' },
-  { name: 'Altın Serum',    sub: 'Keratin Kompleks', img: 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=600&q=85', badge: 'Premium' },
-];
-
 export default async function HomePage() {
+  const dict = await getSiteContent();
+
   let branches: any[] = [];
   let personnel: any[] = [];
   let dbServices: any[] = [];
+  let testimonials: any[] = [];
+  let products: any[] = [];
+  let stats: any[] = [];
 
   try {
-    branches   = await prisma.branch.findMany();
-    personnel  = await prisma.personnel.findMany({ include: { branch: true } });
-    dbServices = await prisma.service.findMany({
-      where: { active: true },
-      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
-      take: 4,
-    });
+    [branches, personnel, dbServices, testimonials, products, stats] = await Promise.all([
+      prisma.branch.findMany(),
+      prisma.personnel.findMany({ include: { branch: true } }),
+      prisma.service.findMany({
+        where: { active: true },
+        orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+        take: 4,
+      }),
+      prisma.testimonial.findMany({
+        where: { active: true },
+        orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+      }),
+      prisma.product.findMany({
+        where: { active: true, featured: false },
+        orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+        take: 3,
+      }),
+      prisma.stat.findMany({
+        where: { active: true, group: 'home-hero' },
+        orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+      }),
+    ]);
   } catch (error) {
-    console.error("Database connection failed. Showing fallback content.", error);
-    branches = [
-      { id: 'f1', name: 'Endam Plus',  location: 'Zonguldak Merkez' },
-      { id: 'f2', name: 'Endam Urban', location: 'Zonguldak' }
-    ];
+    console.error('Database connection failed.', error);
   }
 
-  // Anasayfada gösterilecek hizmet listesi (DB → fallback)
-  const SERVICES = dbServices.length > 0
-    ? dbServices.map((s, i) => ({
-        num: String(i + 1).padStart(2, '0'),
-        title: s.name,
-        price: s.price,
-        desc: s.description || '',
-      }))
-    : FALLBACK_SERVICES;
+  // Anasayfada gösterilecek hizmet listesi
+  const SERVICES = dbServices.map((s, i) => ({
+    num: String(i + 1).padStart(2, '0'),
+    title: s.name,
+    price: s.price,
+    desc: s.description || '',
+  }));
+
+  // Marquee — DB'den • ile ayrılmış metni böl ve 5 kez tekrarla
+  const marqueeRaw = pick(dict, 'home.marquee', 'ERKEK BAKIMI • ZİRVE DENEYİMİ • KLASİK USTURA • MODERN KESİM • ENDAMSINCE ZONGULDAK');
+  const MARQUEE = (marqueeRaw + ' • ').repeat(5).split('•');
 
   return (
     <>
       <HomeAnimations />
-      {/* ══════════════════════════════
-          HERO — FULL SCREEN
-      ══════════════════════════════ */}
+      {/* HERO */}
       <section className="hero">
-        {/* BG Image */}
         <div className="hero-bg">
           <Image
             src="/dukkan.png"
@@ -73,71 +74,59 @@ export default async function HomePage() {
           <div className="hero-overlay" />
         </div>
 
-        {/* Top label */}
         <div className="hero-top-bar container">
-          <span className="label-spaced">Est. 1979 — Zonguldak</span>
-          <span className="label-spaced">[ Plus · Urban · Junior ]</span>
+          <span className="label-spaced">{pick(dict, 'home.hero.label.top', 'Est. 1979 — Zonguldak')}</span>
+          <span className="label-spaced">{pick(dict, 'home.hero.label.right', '[ Plus · Urban · Junior ]')}</span>
         </div>
 
-        {/* Main text */}
         <div className="container hero-body">
           <div className="hero-left">
             <p className="label-orange" style={{ marginBottom: '2rem' }}>
-              Erkek Bakımında Yeni Bir Çağ
+              {pick(dict, 'home.hero.eyebrow', 'Erkek Bakımında Yeni Bir Çağ')}
             </p>
             <h1 className="h-hero" style={{ color: '#fff' }}>
-              Tarzınızı<br />
-              <em className="text-orange" style={{ fontStyle: 'italic' }}>Keskinleştirin</em>
+              {pick(dict, 'home.hero.title.1', 'Tarzınızı')}<br />
+              <em className="text-orange" style={{ fontStyle: 'italic' }}>{pick(dict, 'home.hero.title.2', 'Keskinleştirin')}</em>
             </h1>
           </div>
 
           <div className="hero-right">
-            {/* Animated orange line */}
             <div className="hero-right-line" aria-hidden />
-
-            {/* Large serif tagline — the main editorial statement */}
             <div className="hero-tagline">
-              <p className="hero-tagline-em">
-                Sıradan bir tıraş değil,
-              </p>
+              <p className="hero-tagline-em">{pick(dict, 'home.hero.tagline.em', 'Sıradan bir tıraş değil,')}</p>
               <p className="hero-tagline-body">
-                kendinize en değerli<br />zaman dilimi.
+                {pick(dict, 'home.hero.tagline.body', 'kendinize en değerli\nzaman dilimi.')
+                  .split('\n')
+                  .map((line, i, arr) => (
+                    <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
+                  ))}
               </p>
             </div>
-
-            {/* Divider */}
             <div className="hero-right-divider" aria-hidden />
-
-            {/* CTA stack */}
             <div className="hero-right-cta">
               <Link href="/randevu" className="btn-fill hero-cta-primary">
-                Randevu Al
+                {pick(dict, 'home.hero.cta.primary', 'Randevu Al')}
               </Link>
               <Link href="/hizmetler" className="hero-discover">
-                <span>Hizmetleri Keşfet</span>
+                <span>{pick(dict, 'home.hero.cta.secondary', 'Hizmetleri Keşfet')}</span>
                 <span className="hero-discover-arrow">→</span>
               </Link>
             </div>
           </div>
         </div>
 
-        {/* Bottom bar */}
         <div className="hero-bottom container">
           <div className="hero-stats">
-            {[
-              { val: '15K+', lbl: 'Mutlu Müşteri' },
-              { val: '45+',  lbl: 'Yıl Deneyim' },
-              { val: '3',    lbl: 'Şube' },
-            ].map((s) => (
-              <div key={s.lbl} className="hero-stat">
-                <span className="hero-stat-val">{s.val}</span>
-                <span className="label-spaced" style={{ marginTop: '0.3rem' }}>{s.lbl}</span>
+            {stats.map((s) => (
+              <div key={s.id} className="hero-stat">
+                <span className="hero-stat-val">{s.value}</span>
+                <span className="label-spaced" style={{ marginTop: '0.3rem' }}>{s.label}</span>
               </div>
             ))}
           </div>
           <div className="hero-scroll-cue">
             <div className="scroll-line" />
-            <span className="label-spaced">Aşağı kaydır</span>
+            <span className="label-spaced">{pick(dict, 'home.hero.scrollcue', 'Aşağı kaydır')}</span>
           </div>
         </div>
       </section>
@@ -149,9 +138,7 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* ══════════════════════════════
-          INTRO — EDITORIAL TEXT BLOCK
-      ══════════════════════════════ */}
+      {/* INTRO */}
       <section className="section intro-section">
         <div className="container">
           <div className="intro-grid">
@@ -160,18 +147,15 @@ export default async function HomePage() {
             </div>
             <div className="intro-body">
               <p className="h-section" style={{ marginBottom: '2.5rem' }}>
-                Sıradan değil,<br />
-                <em className="text-orange" style={{ fontStyle: 'italic' }}>efsanevi</em> bir tıraş.
+                {pick(dict, 'home.intro.title.1', 'Sıradan değil,')}<br />
+                <em className="text-orange" style={{ fontStyle: 'italic' }}>{pick(dict, 'home.intro.title.2', 'efsanevi')}</em> {pick(dict, 'home.intro.title.3', 'bir tıraş.')}
               </p>
               <p className="intro-text">
-                1979'dan bu yana erkek bakımını bir sanat formu olarak ele alıyoruz. 
-                Klasik berber kültürünü modern ve lüks bir atmosferle harmanlayan salonlarımızda 
-                her müşteri özel muamele görür. Plus, Urban ve Junior şubelerimizle
-                Zonguldak'ın en prestijli berber deneyimini sunuyoruz.
+                {pick(dict, 'home.intro.body', "1979'dan bu yana erkek bakımını bir sanat formu olarak ele alıyoruz.")}
               </p>
               <div className="intro-cta">
                 <Link href="/hakkimizda" className="btn" style={{ color: 'var(--text-dark)' }}>
-                  Hikayemizi Oku
+                  {pick(dict, 'home.intro.cta', 'Hikayemizi Oku')}
                 </Link>
               </div>
             </div>
@@ -179,33 +163,30 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════
-          SERVICES — NUMBERED LIST
-      ══════════════════════════════ */}
-      <section className="section" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)' }}>
-        <div className="container">
-          <div className="svc-header">
-            <span className="section-index">02 / Hizmetler</span>
-            <Link href="/hizmetler" className="btn" style={{ color: 'var(--text-dark)' }}>Tümünü Gör</Link>
+      {/* SERVICES */}
+      {SERVICES.length > 0 && (
+        <section className="section" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)' }}>
+          <div className="container">
+            <div className="svc-header">
+              <span className="section-index">02 / Hizmetler</span>
+              <Link href="/hizmetler" className="btn" style={{ color: 'var(--text-dark)' }}>Tümünü Gör</Link>
+            </div>
+            <div className="svc-list">
+              {SERVICES.map((s, i) => (
+                <Link href="/hizmetler" key={i} className="svc-row">
+                  <span className="svc-row-num label-spaced">{s.num}</span>
+                  <span className="svc-row-title">{s.title}</span>
+                  <span className="svc-row-desc label-spaced">{s.desc}</span>
+                  <span className="svc-row-price">{s.price}</span>
+                  <span className="svc-row-arrow">→</span>
+                </Link>
+              ))}
+            </div>
           </div>
+        </section>
+      )}
 
-          <div className="svc-list">
-            {SERVICES.map((s, i) => (
-              <Link href="/hizmetler" key={i} className="svc-row">
-                <span className="svc-row-num label-spaced">{s.num}</span>
-                <span className="svc-row-title">{s.title}</span>
-                <span className="svc-row-desc label-spaced">{s.desc}</span>
-                <span className="svc-row-price">{s.price}</span>
-                <span className="svc-row-arrow">→</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════
-          ABOUT IMAGE SPLIT
-      ══════════════════════════════ */}
+      {/* ABOUT IMAGE SPLIT */}
       <section className="section about-split">
         <div className="about-split-img">
           <Image
@@ -216,19 +197,21 @@ export default async function HomePage() {
             sizes="50vw"
           />
           <div className="about-split-badge">
-            <span className="display" style={{ fontFamily: 'var(--font-display)', fontSize: '3rem', color: 'var(--orange)' }}>45+</span>
-            <span className="label-spaced" style={{ marginTop: '0.3rem', fontSize: '0.58rem' }}>Yıllık Tecrübe</span>
+            <span className="display" style={{ fontFamily: 'var(--font-display)', fontSize: '3rem', color: 'var(--orange)' }}>
+              {pick(dict, 'home.split.badge.value', '45+')}
+            </span>
+            <span className="label-spaced" style={{ marginTop: '0.3rem', fontSize: '0.58rem' }}>
+              {pick(dict, 'home.split.badge.label', 'Yıllık Tecrübe')}
+            </span>
           </div>
         </div>
         <div className="about-split-body">
           <span className="section-index">03 / Deneyim</span>
           <h2 className="h-section" style={{ marginBottom: '2rem' }}>
-            Her Detay<br />Sizin İçin
+            {pick(dict, 'home.split.title.1', 'Her Detay')}<br />{pick(dict, 'home.split.title.2', 'Sizin İçin')}
           </h2>
           <p className="about-split-text">
-            Kullanılan ürünlerden sunulan ikramlara kadar her detay özenle seçildi. 
-            Kapıdan girer girmez kendinizi özel hissedeceğiniz, tıraş koltuğunda 
-            kahvenizi yudumlarken tarzınızı usta ellere bırakacağınız bir deneyim.
+            {pick(dict, 'home.split.body', 'Kullanılan ürünlerden sunulan ikramlara kadar her detay özenle seçildi.')}
           </p>
           <div style={{ display: 'flex', gap: '1.5rem', marginTop: '2.5rem', flexWrap: 'wrap' }}>
             <Link href="/hakkimizda" className="btn-fill">Daha Fazla</Link>
@@ -237,37 +220,34 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════
-          PRODUCTS PREVIEW — HORIZONTAL
-      ══════════════════════════════ */}
-      <section className="section" style={{ borderTop: '1px solid var(--border)' }}>
-        <div className="container">
-          <div className="svc-header" style={{ marginBottom: '3rem' }}>
-            <span className="section-index">04 / Ürünler</span>
-            <Link href="/urunler" className="btn" style={{ color: 'var(--text-dark)' }}>Tüm Ürünler</Link>
+      {/* PRODUCTS PREVIEW */}
+      {products.length > 0 && (
+        <section className="section" style={{ borderTop: '1px solid var(--border)' }}>
+          <div className="container">
+            <div className="svc-header" style={{ marginBottom: '3rem' }}>
+              <span className="section-index">04 / Ürünler</span>
+              <Link href="/urunler" className="btn" style={{ color: 'var(--text-dark)' }}>Tüm Ürünler</Link>
+            </div>
+            <div className="prod-prev-grid">
+              {products.map((p) => (
+                <Link href="/urunler" key={p.id} className="prod-prev-card">
+                  <div className="prod-prev-img">
+                    {p.image && <Image src={p.image} alt={p.name} fill style={{ objectFit: 'cover' }} />}
+                    <div className="prod-prev-overlay" />
+                  </div>
+                  <div className="prod-prev-body">
+                    {p.tag && <span className="label-orange" style={{ fontSize: '0.58rem', marginBottom: '0.5rem', display: 'block' }}>{p.tag}</span>}
+                    <h3 className="h-card">{p.name}</h3>
+                    <p className="label-spaced" style={{ marginTop: '0.4rem', fontSize: '0.6rem' }}>{p.subtitle}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
+        </section>
+      )}
 
-          <div className="prod-prev-grid">
-            {PRODUCTS_PREVIEW.map((p, i) => (
-              <Link href="/urunler" key={i} className="prod-prev-card">
-                <div className="prod-prev-img">
-                  <Image src={p.img} alt={p.name} fill style={{ objectFit: 'cover' }} />
-                  <div className="prod-prev-overlay" />
-                </div>
-                <div className="prod-prev-body">
-                  <span className="label-orange" style={{ fontSize: '0.58rem', marginBottom: '0.5rem', display: 'block' }}>{p.badge}</span>
-                  <h3 className="h-card">{p.name}</h3>
-                  <p className="label-spaced" style={{ marginTop: '0.4rem', fontSize: '0.6rem' }}>{p.sub}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════
-          BRANCHES
-      ══════════════════════════════ */}
+      {/* BRANCHES */}
       {branches.length > 0 && (
         <section className="section" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)' }}>
           <div className="container">
@@ -299,9 +279,7 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ══════════════════════════════
-          TEAM — if exists
-      ══════════════════════════════ */}
+      {/* TEAM */}
       {personnel.length > 0 && (
         <section className="section" style={{ borderTop: '1px solid var(--border)' }}>
           <div className="container">
@@ -330,33 +308,27 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ══════════════════════════════
-          TESTIMONIALS
-      ══════════════════════════════ */}
-      <section className="section testi-section">
-        <div className="container">
-          <span className="section-index">07 / Görüşler</span>
-          <div className="testi-grid">
-            {[
-              { q: '"Yıllardır aradığım berberi sonunda buldum. Atmosfer ve kahve harika, kesim tam istediğim gibi."', a: 'Ozan T.', loc: 'Plus' },
-              { q: '"Urban şubesindeki hizmet dünya standartlarında. Adeta terapi seansı gibi hissettiriyor."', a: 'Emirhan K.', loc: 'Urban' },
-              { q: '"Personelin ilgisi ve mekanın temizliği üst düzey. Junior için de mükemmel bir tercih."', a: 'Caner D.', loc: 'Junior' },
-            ].map((t, i) => (
-              <div key={i} className="testi-item">
-                <p className="testi-quote">{t.q}</p>
-                <div className="testi-meta">
-                  <span className="label-spaced" style={{ fontSize: '0.6rem' }}>{t.a}</span>
-                  <span className="label-orange" style={{ fontSize: '0.58rem' }}>{t.loc} Şubesi</span>
+      {/* TESTIMONIALS */}
+      {testimonials.length > 0 && (
+        <section className="section testi-section">
+          <div className="container">
+            <span className="section-index">07 / {pick(dict, 'home.testi.indextitle', 'Görüşler')}</span>
+            <div className="testi-grid">
+              {testimonials.map((t) => (
+                <div key={t.id} className="testi-item">
+                  <p className="testi-quote">{t.quote}</p>
+                  <div className="testi-meta">
+                    <span className="label-spaced" style={{ fontSize: '0.6rem' }}>{t.author}</span>
+                    <span className="label-orange" style={{ fontSize: '0.58rem' }}>{t.location} Şubesi</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* ══════════════════════════════
-          CTA — FULL WIDTH DARK
-      ══════════════════════════════ */}
+      {/* CTA */}
       <section className="cta-section">
         <div className="cta-bg">
           <Image
@@ -369,13 +341,13 @@ export default async function HomePage() {
           <div className="cta-overlay" />
         </div>
         <div className="container cta-body">
-          <p className="label-orange" style={{ marginBottom: '2rem' }}>Online Rezervasyon</p>
+          <p className="label-orange" style={{ marginBottom: '2rem' }}>{pick(dict, 'home.cta.eyebrow', 'Online Rezervasyon')}</p>
           <h2 className="h-section" style={{ color: '#fff', marginBottom: '3rem' }}>
-            Randevunuzu<br />
-            <em style={{ fontStyle: 'italic', color: 'var(--orange)' }}>Hemen Alın</em>
+            {pick(dict, 'home.cta.title.1', 'Randevunuzu')}<br />
+            <em style={{ fontStyle: 'italic', color: 'var(--orange)' }}>{pick(dict, 'home.cta.title.2', 'Hemen Alın')}</em>
           </h2>
           <Link href="/randevu" className="btn-fill" style={{ fontSize: '0.75rem' }}>
-            Randevu Oluştur
+            {pick(dict, 'home.cta.button', 'Randevu Oluştur')}
           </Link>
         </div>
       </section>

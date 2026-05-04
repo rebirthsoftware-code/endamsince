@@ -2,42 +2,58 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PrismaClient } from '@prisma/client';
+import { getSiteContent, pick } from '@/lib/content';
 import './ekip.css';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Ekibimiz',
-  description: 'Endamsince\'nin uzman berber ve stilistleri. Ekibimizi tanıyın.',
+  description: 'Endamsince\'nin uzman berber ve stilistleri.',
 };
 
 const prisma = new PrismaClient();
 
 export default async function EkipPage() {
+  const dict = await getSiteContent();
+  const careerEmail = pick(dict, 'contact.career.email', 'kariyer@endamsince.com');
+  const phoneTel = pick(dict, 'contact.phone.tel', '+905551234567');
+
   let personnel: any[] = [];
+  let perks: any[] = [];
+
   try {
-    personnel = await prisma.personnel.findMany({ include: { branch: true } });
+    [personnel, perks] = await Promise.all([
+      prisma.personnel.findMany({ include: { branch: true } }),
+      prisma.infoCard.findMany({
+        where: { active: true, group: 'team-perks' },
+        orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+      }),
+    ]);
   } catch (error) {
-    console.error("Ekip veritabanı hatası:", error);
+    console.error('Ekip içerik yüklenemedi:', error);
   }
 
   return (
     <>
-      {/* ─── PAGE HERO ─── */}
+      {/* HERO */}
       <div className="page-hero">
         <div className="container">
-          <span className="page-hero-label display">Profesyonel Ekip</span>
-          <h1>Uzman <span className="text-orange">Stilistlerimiz</span></h1>
-          <p>Tarzınızı uluslararası standartlarda eğitim almış uzmanlara teslim edin.</p>
+          <span className="page-hero-label display">{pick(dict, 'ekip.hero.eyebrow', 'Profesyonel Ekip')}</span>
+          <h1>
+            {pick(dict, 'ekip.hero.title.1', 'Uzman')}{' '}
+            <span className="text-orange">{pick(dict, 'ekip.hero.title.2', 'Stilistlerimiz')}</span>
+          </h1>
+          <p>{pick(dict, 'ekip.hero.body', 'Tarzınızı uluslararası standartlarda eğitim almış uzmanlara teslim edin.')}</p>
         </div>
       </div>
 
-      {/* ─── TEAM GRID ─── */}
+      {/* TEAM GRID */}
       <section className="section">
         <div className="container">
           {personnel.length > 0 ? (
             <div className="team-grid">
-              {personnel.map((p, i) => (
+              {personnel.map((p) => (
                 <div key={p.id} className="team-card">
                   <div className="team-img">
                     {p.image
@@ -72,41 +88,40 @@ export default async function EkipPage() {
         </div>
       </section>
 
-      {/* ─── JOIN US ─── */}
-      <section className="section" style={{ background: 'var(--surface)' }}>
-        <div className="container">
-          <div className="join-grid">
-            <div>
-              <p className="eyebrow">Kariyer</p>
-              <h2 className="h2">Ekibimize <span className="text-orange">Katılın</span></h2>
-              <p className="text-muted" style={{ marginTop: '1rem', lineHeight: 1.85, maxWidth: 480 }}>
-                Tutkulu ve yetenekli berber / stilistler arıyoruz. Endamsince ailesinin bir parçası olmak ve 
-                kariyerinizi zirveye taşımak için bizimle iletişime geçin.
-              </p>
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', flexWrap: 'wrap' }}>
-                <a href="mailto:kariyer@endamsince.com" className="btn btn-primary">Başvuru Yap</a>
-                <a href="tel:+905551234567" className="btn btn-outline">Bizi Ara</a>
+      {/* JOIN US */}
+      {perks.length > 0 && (
+        <section className="section" style={{ background: 'var(--surface)' }}>
+          <div className="container">
+            <div className="join-grid">
+              <div>
+                <p className="eyebrow">{pick(dict, 'ekip.career.eyebrow', 'Kariyer')}</p>
+                <h2 className="h2">
+                  {pick(dict, 'ekip.career.title.1', 'Ekibimize')}{' '}
+                  <span className="text-orange">{pick(dict, 'ekip.career.title.2', 'Katılın')}</span>
+                </h2>
+                <p className="text-muted" style={{ marginTop: '1rem', lineHeight: 1.85, maxWidth: 480 }}>
+                  {pick(dict, 'ekip.career.body', 'Tutkulu ve yetenekli berber / stilistler arıyoruz.')}
+                </p>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', flexWrap: 'wrap' }}>
+                  <a href={`mailto:${careerEmail}`} className="btn btn-primary">Başvuru Yap</a>
+                  <a href={`tel:${phoneTel}`} className="btn btn-outline">Bizi Ara</a>
+                </div>
+              </div>
+              <div className="join-perks">
+                {perks.map((p) => (
+                  <div key={p.id} className="perk-item">
+                    <span className="perk-icon">{p.icon}</span>
+                    <div>
+                      <strong>{p.title}</strong>
+                      <p className="text-muted" style={{ fontSize: '0.88rem', marginTop: '0.2rem' }}>{p.description}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="join-perks">
-              {[
-                { icon: '📚', title: 'Sürekli Eğitim',    desc: 'Yurt içi ve yurt dışı eğitim fırsatları.' },
-                { icon: '💰', title: 'Rekabetçi Ücret',   desc: 'Sektör ortalamasının üzerinde maaş + prim.' },
-                { icon: '🌟', title: 'Kariyer Gelişimi',  desc: 'Şef stilist ve yönetim pozisyonlarına yükselme.' },
-                { icon: '🤝', title: 'Takım Ruhu',        desc: 'Destekleyici ve motive edici çalışma ortamı.' },
-              ].map((p, i) => (
-                <div key={i} className="perk-item">
-                  <span className="perk-icon">{p.icon}</span>
-                  <div>
-                    <strong>{p.title}</strong>
-                    <p className="text-muted" style={{ fontSize: '0.88rem', marginTop: '0.2rem' }}>{p.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
     </>
   );
 }
