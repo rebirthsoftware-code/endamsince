@@ -16,14 +16,68 @@ model Branch {
 }
 
 model Personnel {
-  id           String        @id @default(cuid())
-  name         String
-  role         String
-  image        String?
-  pinCode      String        // For login to the panel
-  branchId     String
-  branch       Branch        @relation(fields: [branchId], references: [id])
-  appointments Appointment[]
+  id            String             @id @default(cuid())
+  name          String
+  role          String
+  image         String?
+  pinCode       String             // For login to the panel
+  branchId      String
+  branch        Branch             @relation(fields: [branchId], references: [id])
+  appointments  Appointment[]
+  subscriptions PushSubscription[]
+}
+
+model GalleryItem {
+  id          String   @id @default(cuid())
+  url         String
+  title       String?
+  category    String?
+  width       Int?
+  height      Int?
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([active, order])
+}
+
+model TimeSlot {
+  id        String   @id @default(cuid())
+  time      String   @unique
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([active, order])
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  name        String
+  price       String
+  duration    String
+  description String   @db.Text
+  features    String[]
+  icon        String
+  popular     Boolean  @default(false)
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([active, order])
+}
+
+model PushSubscription {
+  id          String    @id @default(cuid())
+  endpoint    String    @unique
+  p256dh      String
+  auth        String
+  personnelId String
+  personnel   Personnel @relation(fields: [personnelId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@index([personnelId])
 }
 
 model Appointment {
@@ -32,9 +86,110 @@ model Appointment {
   customerPhone String
   date          String    // YYYY-MM-DD
   time          String    // HH:MM
-  status        String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  status        String    @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
   personnelId   String
   personnel     Personnel @relation(fields: [personnelId], references: [id])
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+}
+
+// CMS-style content models managed via admin panel
+model SiteContent {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  label     String
+  group     String   // home, about, hizmetler, urunler, ekip, footer, contact
+  multiline Boolean  @default(false)
+  order     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@index([group, order])
+}
+
+// Customer testimonials (home page)
+model Testimonial {
+  id        String   @id @default(cuid())
+  quote     String   @db.Text
+  author    String
+  location  String
+  active    Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([active, order])
+}
+
+// FAQ items
+model Faq {
+  id        String   @id @default(cuid())
+  question  String   @db.Text
+  answer    String   @db.Text
+  active    Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([active, order])
+}
+
+// Combined service packages
+model Package {
+  id        String   @id @default(cuid())
+  name      String
+  price     String
+  icon      String
+  services  String[]
+  popular   Boolean  @default(false)
+  active    Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([active, order])
+}
+
+// Product collection
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  subtitle    String
+  category    String
+  price       String
+  tag         String
+  image       String?
+  description String   @db.Text
+  featured    Boolean  @default(false)
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([active, order])
+}
+
+// Statistics
+model Stat {
+  id        String   @id @default(cuid())
+  value     String
+  label     String
+  group     String   // "home-hero", "about-story"
+  active    Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([group, active, order])
+}
+
+// Generic info cards: values, perks, quality, timeline, mission/vision
+model InfoCard {
+  id          String   @id @default(cuid())
+  group       String   // "about-values", "team-perks", "product-quality", "about-timeline", "about-mv"
+  icon        String
+  title       String
+  subtitle    String?
+  description String   @db.Text
+  bullets     String[]
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([group, active, order])
 }

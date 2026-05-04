@@ -10,7 +10,9 @@ export default function PageAnimations() {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Route değişince eski trigger'ları temizle
+    // Route değişince scroll'u en tepeye al — yeni sayfa hep en başından açılsın
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    // Eski trigger'ları temizle
     ScrollTrigger.getAll().forEach(t => t.kill());
 
     /* ── Ortak animasyonlu element selectors ──────────────── */

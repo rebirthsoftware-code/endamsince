@@ -9,16 +9,21 @@ const NAV_LINKS = [
   { href: '/',           label: 'Ana Sayfa' },
   { href: '/hakkimizda', label: 'Hakkımızda' },
   { href: '/hizmetler',  label: 'Hizmetler' },
+  { href: '/galeri',     label: 'Galeri' },
   { href: '/urunler',    label: 'Ürünler' },
   { href: '/ekip',       label: 'Ekibimiz' },
   { href: '/randevu',    label: 'Randevu' },
 ];
+
+/** Header'ın gözükmediği rotalar (kendi header'larını yöneten dashboard'lar) */
+const HEADER_HIDDEN = ['/panel', '/admin'];
 
 export default function Header() {
   const [open, setOpen]         = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname                = usePathname();
   const isHeroMode = pathname === '/' && !scrolled;
+  const hidden = HEADER_HIDDEN.some(r => pathname === r || pathname?.startsWith(r + '/'));
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 80);
@@ -26,8 +31,14 @@ export default function Header() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  useEffect(() => { document.body.style.overflow = open ? 'hidden' : ''; }, [open]);
+  useEffect(() => {
+    const v = open ? 'hidden' : '';
+    document.documentElement.style.overflow = v;
+    document.body.style.overflow = v;
+  }, [open]);
   useEffect(() => { setOpen(false); }, [pathname]);
+
+  if (hidden) return null;
 
   return (
     <>
