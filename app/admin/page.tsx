@@ -140,6 +140,7 @@ export default function AdminPage() {
   const [sessionChecked, setSessionChecked] = useState(false);
 
   const [tab, setTab] = useState<Tab>('services');
+  const [refreshKey, setRefreshKey] = useState(0);
   const [toast, setToast] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null);
 
   const showToast = useCallback((type: 'ok' | 'err', msg: string) => {
@@ -232,7 +233,17 @@ export default function AdminPage() {
               <small>Yönetim Paneli</small>
             </div>
           </div>
-          <button className="admin-logout" onClick={logout}>⎋ Çıkış</button>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              className="admin-logout"
+              onClick={() => { setRefreshKey((k) => k + 1); showToast('ok', 'Yenilendi'); }}
+              title="Verileri yenile"
+              aria-label="Verileri yenile"
+            >
+              ↻ Güncelle
+            </button>
+            <button className="admin-logout" onClick={logout}>⎋ Çıkış</button>
+          </div>
         </div>
         <nav className="admin-tabs" role="tablist">
           <button
@@ -323,18 +334,18 @@ export default function AdminPage() {
       </header>
 
       <main className="admin-container">
-        {tab === 'services'     && <ServicesTab pin={authPin} showToast={showToast} />}
-        {tab === 'personnel'    && <PersonnelTab pin={authPin} showToast={showToast} />}
-        {tab === 'branches'     && <BranchesTab pin={authPin} showToast={showToast} />}
-        {tab === 'slots'        && <SlotsTab pin={authPin} showToast={showToast} />}
-        {tab === 'gallery'      && <GalleryTab pin={authPin} showToast={showToast} />}
-        {tab === 'content'      && <ContentTab pin={authPin} showToast={showToast} />}
-        {tab === 'testimonials' && <TestimonialsTab pin={authPin} showToast={showToast} />}
-        {tab === 'faqs'         && <FaqsTab pin={authPin} showToast={showToast} />}
-        {tab === 'packages'     && <PackagesTab pin={authPin} showToast={showToast} />}
-        {tab === 'products'     && <ProductsTab pin={authPin} showToast={showToast} />}
-        {tab === 'stats'        && <StatsTab pin={authPin} showToast={showToast} />}
-        {tab === 'cards'        && <CardsTab pin={authPin} showToast={showToast} />}
+        {tab === 'services'     && <ServicesTab     key={`services-${refreshKey}`}     pin={authPin} showToast={showToast} />}
+        {tab === 'personnel'    && <PersonnelTab    key={`personnel-${refreshKey}`}    pin={authPin} showToast={showToast} />}
+        {tab === 'branches'     && <BranchesTab     key={`branches-${refreshKey}`}     pin={authPin} showToast={showToast} />}
+        {tab === 'slots'        && <SlotsTab        key={`slots-${refreshKey}`}        pin={authPin} showToast={showToast} />}
+        {tab === 'gallery'      && <GalleryTab      key={`gallery-${refreshKey}`}      pin={authPin} showToast={showToast} />}
+        {tab === 'content'      && <ContentTab      key={`content-${refreshKey}`}      pin={authPin} showToast={showToast} />}
+        {tab === 'testimonials' && <TestimonialsTab key={`testimonials-${refreshKey}`} pin={authPin} showToast={showToast} />}
+        {tab === 'faqs'         && <FaqsTab         key={`faqs-${refreshKey}`}         pin={authPin} showToast={showToast} />}
+        {tab === 'packages'     && <PackagesTab     key={`packages-${refreshKey}`}     pin={authPin} showToast={showToast} />}
+        {tab === 'products'     && <ProductsTab     key={`products-${refreshKey}`}     pin={authPin} showToast={showToast} />}
+        {tab === 'stats'        && <StatsTab        key={`stats-${refreshKey}`}        pin={authPin} showToast={showToast} />}
+        {tab === 'cards'        && <CardsTab        key={`cards-${refreshKey}`}        pin={authPin} showToast={showToast} />}
       </main>
 
       {toast && (
