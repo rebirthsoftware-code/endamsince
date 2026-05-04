@@ -136,23 +136,16 @@ function RandevuContent() {
             <h3 className="heading-3 mb-6">1. Şube Seçimi</h3>
             <div className="grid-options">
               {branches.map(b => (
-                <div 
-                  key={b.id} 
+                <div
+                  key={b.id}
                   className={`option-card ${selectedBranch === b.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedBranch(b.id)}
+                  onClick={() => { setSelectedBranch(b.id); setStep(2); }}
                 >
                   <h4 className={selectedBranch === b.id ? 'text-gold' : ''}>{b.name}</h4>
                   <p className="text-secondary text-sm mt-2">{b.location}</p>
                 </div>
               ))}
             </div>
-            <button 
-              className="btn btn-primary mt-8 w-full btn-lg" 
-              disabled={!selectedBranch} 
-              onClick={nextStep}
-            >
-              Devam Et
-            </button>
           </div>
         )}
 
@@ -161,10 +154,10 @@ function RandevuContent() {
             <h3 className="heading-3 mb-6">2. Personel Seçimi</h3>
             <div className="grid-options">
               {personnel.map(p => (
-                <div 
-                  key={p.id} 
+                <div
+                  key={p.id}
                   className={`option-card ${selectedPersonnel === p.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedPersonnel(p.id)}
+                  onClick={() => { setSelectedPersonnel(p.id); setStep(3); }}
                 >
                   <div className="personnel-avatar" style={{ overflow: 'hidden', position: 'relative' }}>
                     {p.image ? (
@@ -181,7 +174,6 @@ function RandevuContent() {
             </div>
             <div className="flex-between mt-8 gap-4">
               <button className="btn btn-outline" onClick={prevStep}>Geri</button>
-              <button className="btn btn-primary flex-grow" disabled={!selectedPersonnel} onClick={nextStep}>Devam Et</button>
             </div>
           </div>
         )}
@@ -194,7 +186,7 @@ function RandevuContent() {
               <input type="date" className="input-field input-lg" value={date} onChange={e => setDate(e.target.value)} min={new Date().toISOString().split('T')[0]} />
             </div>
             <div className="input-group mt-6">
-              <label className="input-label">Saat Seçin</label>
+              <label className="input-label">Saat Seçin (saate tıklayın, otomatik devam edecek)</label>
               {!date ? (
                 <p className="text-secondary text-sm">Önce bir tarih seçin.</p>
               ) : slotsLoading ? (
@@ -211,7 +203,11 @@ function RandevuContent() {
                         type="button"
                         key={slot}
                         disabled={isTaken}
-                        onClick={() => !isTaken && setTime(slot)}
+                        onClick={() => {
+                          if (isTaken) return;
+                          setTime(slot);
+                          setStep(4);
+                        }}
                         className={`time-slot ${isSelected ? 'selected' : ''} ${isTaken ? 'taken' : ''}`}
                       >
                         <span className="time-slot-hr">{slot}</span>
@@ -224,7 +220,6 @@ function RandevuContent() {
             </div>
             <div className="flex-between mt-8 gap-4">
               <button className="btn btn-outline" onClick={prevStep}>Geri</button>
-              <button className="btn btn-primary flex-grow" disabled={!date || !time} onClick={nextStep}>Devam Et</button>
             </div>
           </div>
         )}
