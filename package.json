@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev --port 3001",
-    "build": "prisma db push --accept-data-loss && npm run seed && next build",
+    "build": "node scripts/db-prepare.mjs && next build",
     "start": "next start",
     "lint": "eslint",
     "seed": "node --experimental-strip-types prisma/seed.ts",
