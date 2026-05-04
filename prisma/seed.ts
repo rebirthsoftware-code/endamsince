@@ -230,85 +230,70 @@ const SERVICES = [
 ];
 
 async function main() {
-  console.log('Start seeding ...');
+  console.log('Seed başlatılıyor (idempotent — varolan veriyi silmez)…');
 
-  // Mevcut randevu/personel/şubeleri sıfırla (geliştirme tohumu)
-  await prisma.appointment.deleteMany();
-  await prisma.pushSubscription.deleteMany();
-  await prisma.personnel.deleteMany();
-  await prisma.branch.deleteMany();
-  await prisma.timeSlot.deleteMany();
-  await prisma.galleryItem.deleteMany();
-  await prisma.service.deleteMany();
-  await prisma.testimonial.deleteMany();
-  await prisma.faq.deleteMany();
-  await prisma.package.deleteMany();
-  await prisma.product.deleteMany();
-  await prisma.stat.deleteMany();
-  await prisma.infoCard.deleteMany();
-  // SiteContent UPSERT — silmiyoruz, varolanları korur, eksikleri ekler
+  // SiteContent: upsert — varolan değerleri korur, eksikleri ekler.
+  let scAdded = 0;
   for (const c of SITE_CONTENT) {
-    await prisma.siteContent.upsert({
-      where: { key: c.key },
-      update: { label: c.label, group: c.group, multiline: !!c.multiline, order: c.order ?? 0 },
-      create: c,
-    });
+    const existing = await prisma.siteContent.findUnique({ where: { key: c.key } });
+    if (existing) {
+      // Sadece label/group/multiline/order'ı tazele, value'yu koru
+      await prisma.siteContent.update({
+        where: { key: c.key },
+        data: { label: c.label, group: c.group, multiline: !!c.multiline, order: c.order ?? 0 },
+      });
+    } else {
+      await prisma.siteContent.create({ data: c });
+      scAdded++;
+    }
   }
-  console.log(`✓ ${SITE_CONTENT.length} site içeriği yüklendi.`);
+  console.log(`✓ SiteContent: ${scAdded} yeni anahtar eklendi (varolanlar korundu).`);
 
-  // Branches
-  const branch1 = await prisma.branch.create({ data: { name: 'Endamsince Plus',    location: 'Endam Plus — Zonguldak',    image: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' } });
-  const branch2 = await prisma.branch.create({ data: { name: 'Endamsince Urban',   location: 'Endam Urban — Zonguldak',   image: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' } });
-  const branch3 = await prisma.branch.create({ data: { name: 'Endamsince Junior',  location: 'Endam Junior — Zonguldak',  image: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' } });
-  console.log('✓ 3 şube eklendi.');
+  // Aşağıdaki tablolar için: tablo BOŞSA seedler, doluysa atla.
+  await seedIfEmpty('Branch', () => prisma.branch.count(), async () => {
+    const b1 = await prisma.branch.create({ data: { name: 'Endamsince Plus',   location: 'Endam Plus — Zonguldak',   image: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' } });
+    const b2 = await prisma.branch.create({ data: { name: 'Endamsince Urban',  location: 'Endam Urban — Zonguldak',  image: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' } });
+    const b3 = await prisma.branch.create({ data: { name: 'Endamsince Junior', location: 'Endam Junior — Zonguldak', image: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' } });
+    return [b1, b2, b3];
+  });
 
-  // Personnel
-  const personnelData = [
-    { name: 'Ahmet Yılmaz', role: 'Baş Berber',       branchId: branch1.id, pinCode: '1234', image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80' },
-    { name: 'Mehmet Kaya',  role: 'Saç Stilisti',     branchId: branch1.id, pinCode: '1234', image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80' },
-    { name: 'Can Demir',    role: 'Sakal Uzmanı',     branchId: branch2.id, pinCode: '1234', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80' },
-    { name: 'Burak Şahin',  role: 'VIP Saç Tasarım',  branchId: branch3.id, pinCode: '1234', image: 'https://images.unsplash.com/photo-1480429370139-e01abe113bc0?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80' },
-    { name: 'Emre Çelik',   role: 'Renk Uzmanı',      branchId: branch3.id, pinCode: '1234', image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80' },
-  ];
-  for (const p of personnelData) await prisma.personnel.create({ data: p });
-  console.log(`✓ ${personnelData.length} personel eklendi.`);
+  await seedIfEmpty('Personnel', () => prisma.personnel.count(), async () => {
+    const branches = await prisma.branch.findMany({ orderBy: { name: 'asc' } });
+    if (branches.length < 3) return [];
+    const personnelData = [
+      { name: 'Ahmet Yılmaz', role: 'Baş Berber',      branchId: branches[1].id, pinCode: '1234', image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80' },
+      { name: 'Mehmet Kaya',  role: 'Saç Stilisti',    branchId: branches[1].id, pinCode: '1234', image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80' },
+      { name: 'Can Demir',    role: 'Sakal Uzmanı',    branchId: branches[2].id, pinCode: '1234', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80' },
+      { name: 'Burak Şahin',  role: 'VIP Saç Tasarım', branchId: branches[0].id, pinCode: '1234', image: 'https://images.unsplash.com/photo-1480429370139-e01abe113bc0?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80' },
+      { name: 'Emre Çelik',   role: 'Renk Uzmanı',     branchId: branches[0].id, pinCode: '1234', image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80' },
+    ];
+    return Promise.all(personnelData.map((p) => prisma.personnel.create({ data: p })));
+  });
 
-  // Time slots
-  const slots = ['09:00','10:00','11:00','13:00','14:00','15:00','16:00','17:00'];
-  for (let i = 0; i < slots.length; i++) {
-    await prisma.timeSlot.create({ data: { time: slots[i], order: i + 1 } });
+  await seedIfEmpty('TimeSlot', () => prisma.timeSlot.count(), async () => {
+    const slots = ['09:00','10:00','11:00','13:00','14:00','15:00','16:00','17:00'];
+    return Promise.all(slots.map((time, i) => prisma.timeSlot.create({ data: { time, order: i + 1 } })));
+  });
+
+  await seedIfEmpty('Service',     () => prisma.service.count(),     () => Promise.all(SERVICES.map((s)     => prisma.service.create({ data: s }))));
+  await seedIfEmpty('Testimonial', () => prisma.testimonial.count(), () => Promise.all(TESTIMONIALS.map((t) => prisma.testimonial.create({ data: t }))));
+  await seedIfEmpty('Faq',         () => prisma.faq.count(),         () => Promise.all(FAQS.map((f)         => prisma.faq.create({ data: f }))));
+  await seedIfEmpty('Package',     () => prisma.package.count(),     () => Promise.all(PACKAGES.map((p)     => prisma.package.create({ data: p }))));
+  await seedIfEmpty('Product',     () => prisma.product.count(),     () => Promise.all(PRODUCTS.map((p)     => prisma.product.create({ data: p }))));
+  await seedIfEmpty('Stat',        () => prisma.stat.count(),        () => Promise.all(STATS.map((s)        => prisma.stat.create({ data: s }))));
+  await seedIfEmpty('InfoCard',    () => prisma.infoCard.count(),    () => Promise.all(INFO_CARDS.map((c)   => prisma.infoCard.create({ data: c }))));
+
+  console.log('Seed tamamlandı.');
+}
+
+async function seedIfEmpty(name: string, count: () => Promise<number>, insert: () => Promise<unknown[]>) {
+  const c = await count();
+  if (c > 0) {
+    console.log(`• ${name}: ${c} kayıt mevcut, atlanıyor.`);
+    return;
   }
-  console.log(`✓ ${slots.length} randevu saati eklendi.`);
-
-  // Services
-  for (const s of SERVICES) await prisma.service.create({ data: s });
-  console.log(`✓ ${SERVICES.length} hizmet eklendi.`);
-
-  // Testimonials
-  for (const t of TESTIMONIALS) await prisma.testimonial.create({ data: t });
-  console.log(`✓ ${TESTIMONIALS.length} görüş eklendi.`);
-
-  // FAQ
-  for (const f of FAQS) await prisma.faq.create({ data: f });
-  console.log(`✓ ${FAQS.length} SSS eklendi.`);
-
-  // Packages
-  for (const p of PACKAGES) await prisma.package.create({ data: p });
-  console.log(`✓ ${PACKAGES.length} paket eklendi.`);
-
-  // Products
-  for (const p of PRODUCTS) await prisma.product.create({ data: p });
-  console.log(`✓ ${PRODUCTS.length} ürün eklendi.`);
-
-  // Stats
-  for (const s of STATS) await prisma.stat.create({ data: s });
-  console.log(`✓ ${STATS.length} istatistik eklendi.`);
-
-  // InfoCards
-  for (const c of INFO_CARDS) await prisma.infoCard.create({ data: c });
-  console.log(`✓ ${INFO_CARDS.length} kart eklendi.`);
-
-  console.log('Seeding finished.');
+  const inserted = await insert();
+  console.log(`✓ ${name}: ${inserted.length} kayıt eklendi.`);
 }
 
 main()
