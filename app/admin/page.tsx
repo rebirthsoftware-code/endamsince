@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import InstallButton from '@/components/InstallButton';
 import './Admin.css';
 
 const SESSION_KEY = 'endamsince_admin_session_v1';
@@ -217,6 +218,9 @@ export default function AdminPage() {
             Giriş Yap
           </button>
           <a href="/" className="admin-login-back">← Ana siteye dön</a>
+          <div style={{ marginTop: 12, display: 'flex', justifyContent: 'center' }}>
+            <InstallButton label="📱 Uygulamayı Yükle" />
+          </div>
         </form>
       </div>
     );
@@ -233,7 +237,8 @@ export default function AdminPage() {
               <small>Yönetim Paneli</small>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <InstallButton label="📱 Yükle" />
             <button
               className="admin-logout"
               onClick={() => { setRefreshKey((k) => k + 1); showToast('ok', 'Yenilendi'); }}
