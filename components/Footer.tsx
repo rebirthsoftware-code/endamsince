@@ -119,10 +119,11 @@ export default function Footer() {
         <div className="footer-signature" aria-label="Tasarım & Geliştirme">
           <span className="footer-sig-line" aria-hidden />
           <a
-            href="https://rebirthsoftware.com"
+            href="https://www.instagram.com/rebirthsoftware"
             target="_blank"
             rel="noopener noreferrer"
             className="footer-sig-link"
+            aria-label="Rebirth Software Instagram"
           >
             <span className="footer-sig-eyebrow">Tasarım &amp; Geliştirme</span>
             <span className="footer-sig-mark">
