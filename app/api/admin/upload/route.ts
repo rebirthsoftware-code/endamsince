@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import { requireAdmin } from '@/lib/admin-auth';
 
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const MAX_BYTES = 5 * 1024 * 1024; // 5MB
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
