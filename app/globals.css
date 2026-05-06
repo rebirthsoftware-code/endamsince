@@ -701,11 +701,86 @@ h1,h2,h3,h4,h5,h6 {
   letter-spacing: 0.04em;
 }
 .footer-bottom a { color: var(--orange); font-size: 0.72rem; letter-spacing: 0.15em; }
+
+/* ─────────────  REBIRTH SOFTWARE İmzası  ───────────── */
+.footer-signature {
+  margin-top: 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  justify-content: center;
+}
+.footer-sig-line {
+  flex: 1 1 auto;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.06) 30%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.06) 70%,
+    transparent
+  );
+}
+.footer-sig-link {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.55);
+  transition: color 0.35s ease, transform 0.35s ease;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+}
+.footer-sig-link:hover {
+  color: var(--orange);
+  transform: translateY(-1px);
+}
+.footer-sig-eyebrow {
+  font-size: 0.55rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.28);
+  font-weight: 500;
+  transition: color 0.35s ease;
+}
+.footer-sig-link:hover .footer-sig-eyebrow {
+  color: rgba(232, 89, 26, 0.7);
+}
+.footer-sig-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--font-display, var(--font-serif));
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+}
+.footer-sig-mark svg {
+  flex-shrink: 0;
+  transition: transform 0.5s ease;
+  opacity: 0.85;
+}
+.footer-sig-link:hover .footer-sig-mark svg {
+  transform: rotate(72deg);
+  opacity: 1;
+}
+.footer-sig-name strong {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.footer-sig-name {
+  font-weight: 300;
+  letter-spacing: 0.06em;
+}
+
 @media (max-width: 900px) {
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 2.5rem; }
 }
 @media (max-width: 560px) {
   .footer-grid { grid-template-columns: 1fr; }
+  .footer-signature { gap: 0.75rem; margin-top: 2rem; }
+  .footer-sig-line { display: none; }
 }
 
 /* =========================================

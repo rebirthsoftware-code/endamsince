@@ -115,6 +115,41 @@ export default function Footer() {
           <p>{v('footer.copyright', '© 2026 Endamsince Erkek Kuaför. Tüm hakları saklıdır.')}</p>
           <Link href="/randevu" className="btn btn-primary btn-sm">Online Randevu</Link>
         </div>
+
+        <div className="footer-signature" aria-label="Tasarım & Geliştirme">
+          <span className="footer-sig-line" aria-hidden />
+          <a
+            href="https://rebirthsoftware.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-sig-link"
+          >
+            <span className="footer-sig-eyebrow">Tasarım &amp; Geliştirme</span>
+            <span className="footer-sig-mark">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden focusable="false">
+                <path
+                  d="M12 2 L22 7 V17 L12 22 L2 17 V7 Z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M8 16 V8 H13 A2.5 2.5 0 0 1 13 13 H9 M13 13 L16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span className="footer-sig-name">
+                <strong>rebirth</strong>software
+              </span>
+            </span>
+          </a>
+          <span className="footer-sig-line" aria-hidden />
+        </div>
       </div>
     </footer>
   );
