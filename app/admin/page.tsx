@@ -133,6 +133,14 @@ function authHeaders(pin: string): HeadersInit {
   return { 'Content-Type': 'application/json', [HEADER]: pin };
 }
 
+/** Admin tarafından yapılan tüm fetch çağrılarında cache devre dışı + cache-buster query.
+ *  Browser, Vercel edge ve Next.js Data Cache hiçbiri stale veri sunamasın. */
+function adminFetch(url: string, init?: RequestInit): Promise<Response> {
+  const sep = url.includes('?') ? '&' : '?';
+  const bust = `${sep}_t=${Date.now()}`;
+  return fetch(url + bust, { ...init, cache: 'no-store' });
+}
+
 export default function AdminPage() {
   const [pin, setPin] = useState('');
   const [authPin, setAuthPin] = useState('');
@@ -169,7 +177,7 @@ export default function AdminPage() {
     e.preventDefault();
     setAuthError('');
     try {
-      const res = await fetch('/api/admin/login', {
+      const res = await adminFetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pin }),
@@ -380,7 +388,7 @@ function ServicesTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/services', { headers: authHeaders(pin) });
+      const res = await adminFetch('/api/admin/services', { headers: authHeaders(pin) });
       if (res.ok) setList(await res.json());
     } finally {
       setLoading(false);
@@ -406,7 +414,7 @@ function ServicesTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err
 
   const remove = async (id: string) => {
     if (!confirm('Bu hizmeti silmek istiyor musunuz?')) return;
-    const res = await fetch(`/api/admin/services/${id}`, { method: 'DELETE', headers: authHeaders(pin) });
+    const res = await adminFetch(`/api/admin/services/${id}`, { method: 'DELETE', headers: authHeaders(pin) });
     if (res.ok) { showToast('ok', 'Silindi'); await load(); }
     else showToast('err', 'Silinemedi');
   };
@@ -572,8 +580,8 @@ function PersonnelTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'er
     setLoading(true);
     try {
       const [p, b] = await Promise.all([
-        fetch('/api/admin/personnel', { headers: authHeaders(pin) }).then((r) => r.ok ? r.json() : []),
-        fetch('/api/admin/branches', { headers: authHeaders(pin) }).then((r) => r.ok ? r.json() : []),
+        adminFetch('/api/admin/personnel', { headers: authHeaders(pin) }).then((r) => r.ok ? r.json() : []),
+        adminFetch('/api/admin/branches', { headers: authHeaders(pin) }).then((r) => r.ok ? r.json() : []),
       ]);
       setList(p); setBranches(b);
     } finally { setLoading(false); }
@@ -592,7 +600,7 @@ function PersonnelTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'er
 
   const remove = async (id: string) => {
     if (!confirm('Bu personeli ve tüm randevularını silmek istiyor musunuz?')) return;
-    const res = await fetch(`/api/admin/personnel/${id}`, { method: 'DELETE', headers: authHeaders(pin) });
+    const res = await adminFetch(`/api/admin/personnel/${id}`, { method: 'DELETE', headers: authHeaders(pin) });
     if (res.ok) { showToast('ok', 'Silindi'); await load(); }
     else showToast('err', 'Silinemedi');
   };
@@ -720,14 +728,14 @@ function BranchesTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await fetch('/api/admin/branches', { headers: authHeaders(pin) });
+      const r = await adminFetch('/api/admin/branches', { headers: authHeaders(pin) });
       if (r.ok) setList(await r.json());
     } finally { setLoading(false); }
   }, [pin]);
   useEffect(() => { load(); }, [load]);
 
   const save = async (data: Partial<Branch>, id: string) => {
-    const r = await fetch(`/api/admin/branches/${id}`, {
+    const r = await adminFetch(`/api/admin/branches/${id}`, {
       method: 'PATCH',
       headers: authHeaders(pin),
       body: JSON.stringify(data),
@@ -838,7 +846,7 @@ function SlotsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/time-slots', { headers: authHeaders(pin) });
+      const res = await adminFetch('/api/admin/time-slots', { headers: authHeaders(pin) });
       if (res.ok) setList(await res.json());
     } finally {
       setLoading(false);
@@ -854,7 +862,7 @@ function SlotsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', 
       const order = list.length > 0
         ? Math.max(...list.map((s) => s.order)) + 1
         : 1;
-      const res = await fetch('/api/admin/time-slots', {
+      const res = await adminFetch('/api/admin/time-slots', {
         method: 'POST',
         headers: authHeaders(pin),
         body: JSON.stringify({ time: newTime, order }),
@@ -874,7 +882,7 @@ function SlotsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', 
 
   const remove = async (id: string, time: string) => {
     if (!confirm(`${time} saatini silmek istiyor musunuz?`)) return;
-    const res = await fetch(`/api/admin/time-slots/${id}`, {
+    const res = await adminFetch(`/api/admin/time-slots/${id}`, {
       method: 'DELETE',
       headers: authHeaders(pin),
     });
@@ -887,7 +895,7 @@ function SlotsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', 
   };
 
   const toggle = async (s: TimeSlot) => {
-    const res = await fetch(`/api/admin/time-slots/${s.id}`, {
+    const res = await adminFetch(`/api/admin/time-slots/${s.id}`, {
       method: 'PATCH',
       headers: authHeaders(pin),
       body: JSON.stringify({ active: !s.active }),
@@ -983,7 +991,7 @@ function GalleryTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err'
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/gallery', { headers: authHeaders(pin) });
+      const res = await adminFetch('/api/admin/gallery', { headers: authHeaders(pin) });
       if (res.ok) setList(await res.json());
     } finally {
       setLoading(false);
@@ -1000,7 +1008,7 @@ function GalleryTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err'
         const fd = new FormData();
         fd.append('file', file);
         fd.append('folder', 'gallery');
-        const upRes = await fetch('/api/admin/upload', {
+        const upRes = await adminFetch('/api/admin/upload', {
           method: 'POST',
           headers: { [HEADER]: pin },
           body: fd,
@@ -1018,7 +1026,7 @@ function GalleryTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err'
         });
 
         const order = list.length + added + 1;
-        const cRes = await fetch('/api/admin/gallery', {
+        const cRes = await adminFetch('/api/admin/gallery', {
           method: 'POST',
           headers: authHeaders(pin),
           body: JSON.stringify({ url, width, height, order }),
@@ -1037,7 +1045,7 @@ function GalleryTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err'
 
   const remove = async (id: string) => {
     if (!confirm('Bu fotoğrafı galeriden silmek istiyor musunuz?')) return;
-    const res = await fetch(`/api/admin/gallery/${id}`, {
+    const res = await adminFetch(`/api/admin/gallery/${id}`, {
       method: 'DELETE',
       headers: authHeaders(pin),
     });
@@ -1046,7 +1054,7 @@ function GalleryTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err'
   };
 
   const toggle = async (g: GalleryItem) => {
-    const res = await fetch(`/api/admin/gallery/${g.id}`, {
+    const res = await adminFetch(`/api/admin/gallery/${g.id}`, {
       method: 'PATCH',
       headers: authHeaders(pin),
       body: JSON.stringify({ active: !g.active }),
@@ -1056,7 +1064,7 @@ function GalleryTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err'
   };
 
   const saveMeta = async (id: string, data: Partial<GalleryItem>) => {
-    const res = await fetch(`/api/admin/gallery/${id}`, {
+    const res = await adminFetch(`/api/admin/gallery/${id}`, {
       method: 'PATCH',
       headers: authHeaders(pin),
       body: JSON.stringify(data),
@@ -1235,7 +1243,7 @@ function ImageUpload({
       const fd = new FormData();
       fd.append('file', file);
       fd.append('folder', folder);
-      const res = await fetch('/api/admin/upload', {
+      const res = await adminFetch('/api/admin/upload', {
         method: 'POST',
         headers: { [HEADER]: pin },
         body: fd,
@@ -1334,7 +1342,7 @@ function ContentTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err'
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/site-content', { headers: authHeaders(pin) });
+      const res = await adminFetch('/api/admin/site-content', { headers: authHeaders(pin) });
       if (res.ok) {
         const data: SiteContentItem[] = await res.json();
         setList(data);
@@ -1356,7 +1364,7 @@ function ContentTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err'
     if (newValue === item.value) return;
     setSaving(item.id);
     try {
-      const res = await fetch(`/api/admin/site-content/${item.id}`, {
+      const res = await adminFetch(`/api/admin/site-content/${item.id}`, {
         method: 'PATCH',
         headers: authHeaders(pin),
         body: JSON.stringify({ value: newValue }),
@@ -1464,7 +1472,7 @@ function TestimonialsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/testimonials', { headers: authHeaders(pin) });
+      const res = await adminFetch('/api/admin/testimonials', { headers: authHeaders(pin) });
       if (res.ok) setList(await res.json());
     } finally { setLoading(false); }
   }, [pin]);
@@ -1482,7 +1490,7 @@ function TestimonialsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|
 
   const remove = async (id: string) => {
     if (!confirm('Bu görüşü silmek istiyor musunuz?')) return;
-    const res = await fetch(`/api/admin/testimonials/${id}`, { method: 'DELETE', headers: authHeaders(pin) });
+    const res = await adminFetch(`/api/admin/testimonials/${id}`, { method: 'DELETE', headers: authHeaders(pin) });
     if (res.ok) { showToast('ok', 'Silindi'); await load(); } else showToast('err', 'Silinemedi');
   };
 
@@ -1589,7 +1597,7 @@ function FaqsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', m
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/faqs', { headers: authHeaders(pin) });
+      const res = await adminFetch('/api/admin/faqs', { headers: authHeaders(pin) });
       if (res.ok) setList(await res.json());
     } finally { setLoading(false); }
   }, [pin]);
@@ -1607,7 +1615,7 @@ function FaqsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', m
 
   const remove = async (id: string) => {
     if (!confirm('Bu soruyu silmek istiyor musunuz?')) return;
-    const res = await fetch(`/api/admin/faqs/${id}`, { method: 'DELETE', headers: authHeaders(pin) });
+    const res = await adminFetch(`/api/admin/faqs/${id}`, { method: 'DELETE', headers: authHeaders(pin) });
     if (res.ok) { showToast('ok', 'Silindi'); await load(); } else showToast('err', 'Silinemedi');
   };
 
@@ -1705,7 +1713,7 @@ function PackagesTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/packages', { headers: authHeaders(pin) });
+      const res = await adminFetch('/api/admin/packages', { headers: authHeaders(pin) });
       if (res.ok) setList(await res.json());
     } finally { setLoading(false); }
   }, [pin]);
@@ -1723,7 +1731,7 @@ function PackagesTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err
 
   const remove = async (id: string) => {
     if (!confirm('Bu paketi silmek istiyor musunuz?')) return;
-    const res = await fetch(`/api/admin/packages/${id}`, { method: 'DELETE', headers: authHeaders(pin) });
+    const res = await adminFetch(`/api/admin/packages/${id}`, { method: 'DELETE', headers: authHeaders(pin) });
     if (res.ok) { showToast('ok', 'Silindi'); await load(); } else showToast('err', 'Silinemedi');
   };
 
@@ -1844,7 +1852,7 @@ function ProductsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/products', { headers: authHeaders(pin) });
+      const res = await adminFetch('/api/admin/products', { headers: authHeaders(pin) });
       if (res.ok) setList(await res.json());
     } finally { setLoading(false); }
   }, [pin]);
@@ -1862,7 +1870,7 @@ function ProductsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err
 
   const remove = async (id: string) => {
     if (!confirm('Bu ürünü silmek istiyor musunuz?')) return;
-    const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE', headers: authHeaders(pin) });
+    const res = await adminFetch(`/api/admin/products/${id}`, { method: 'DELETE', headers: authHeaders(pin) });
     if (res.ok) { showToast('ok', 'Silindi'); await load(); } else showToast('err', 'Silinemedi');
   };
 
@@ -1995,7 +2003,7 @@ function StatsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/stats', { headers: authHeaders(pin) });
+      const res = await adminFetch('/api/admin/stats', { headers: authHeaders(pin) });
       if (res.ok) setList(await res.json());
     } finally { setLoading(false); }
   }, [pin]);
@@ -2013,7 +2021,7 @@ function StatsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', 
 
   const remove = async (id: string) => {
     if (!confirm('Bu istatistiği silmek istiyor musunuz?')) return;
-    const res = await fetch(`/api/admin/stats/${id}`, { method: 'DELETE', headers: authHeaders(pin) });
+    const res = await adminFetch(`/api/admin/stats/${id}`, { method: 'DELETE', headers: authHeaders(pin) });
     if (res.ok) { showToast('ok', 'Silindi'); await load(); } else showToast('err', 'Silinemedi');
   };
 
@@ -2143,7 +2151,7 @@ function CardsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/info-cards', { headers: authHeaders(pin) });
+      const res = await adminFetch('/api/admin/info-cards', { headers: authHeaders(pin) });
       if (res.ok) setList(await res.json());
     } finally { setLoading(false); }
   }, [pin]);
@@ -2161,7 +2169,7 @@ function CardsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', 
 
   const remove = async (id: string) => {
     if (!confirm('Bu kartı silmek istiyor musunuz?')) return;
-    const res = await fetch(`/api/admin/info-cards/${id}`, { method: 'DELETE', headers: authHeaders(pin) });
+    const res = await adminFetch(`/api/admin/info-cards/${id}`, { method: 'DELETE', headers: authHeaders(pin) });
     if (res.ok) { showToast('ok', 'Silindi'); await load(); } else showToast('err', 'Silinemedi');
   };
 
