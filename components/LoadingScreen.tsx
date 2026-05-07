@@ -30,9 +30,20 @@ export default function LoadingScreen() {
     };
   }, [skip]);
 
-  /* ── Phase 1: counter 0→100 in ~2.5s, sonra direkt title ── */
+  /* ── Phase 1: counter 0→100 in ~2.5s, sonra title — arada nefes payı
+        bırakarak anasayfa hidrasyonu + image decode'unun bitmesini bekleriz.
+        Ek olarak hero arka planını (/dukkan.png) önceden decode ederek
+        scissors-open anında karaltı/jank engellenir. ── */
   useEffect(() => {
     const DURATION = 2500;
+    // Hero image'ini paralelde önceden yükle ve decode et
+    if (typeof window !== 'undefined') {
+      const pre = new window.Image();
+      pre.src = '/dukkan.png';
+      // decode hata verirse de yutulsun
+      pre.decode?.().catch(() => {});
+    }
+
     const start = Date.now();
     const id = setInterval(() => {
       const p = Math.min((Date.now() - start) / DURATION, 1);
@@ -40,7 +51,11 @@ export default function LoadingScreen() {
       setCount(Math.round(e * 100));
       if (p >= 1) {
         clearInterval(id);
-        setTimeout(() => setPhase('title'), 400);
+        // Sayaç 100% olduktan sonra ~1.6 sn ekstra hold:
+        // - hidrasyon, GSAP init, ScrollTrigger kayıtları, image decode
+        //   bu süre içinde bitiyor — title'a geçince kullanıcı kaydırdığında
+        //   hero animasyonu için her şey hazır.
+        setTimeout(() => setPhase('title'), 1600);
       }
     }, 16);
     return () => clearInterval(id);

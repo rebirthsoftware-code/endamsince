@@ -160,25 +160,26 @@ h1,h2,h3,h4,h5,h6 {
    ========================================= */
 .cursor-dot {
   position: fixed;
+  top: 0; left: 0;
   pointer-events: none;
   z-index: 9999;
   width: 6px; height: 6px;
   background: var(--orange);
   border-radius: 50%;
-  transform: translate(-50%, -50%);
-  transition: transform 0.12s ease, width 0.3s, height 0.3s, background 0.2s;
-  will-change: left, top;
+  /* Pozisyon JS tarafından translate3d ile yazılır; transition sadece boyut/renk için */
+  transition: width 0.25s ease, height 0.25s ease, background 0.2s;
+  will-change: transform;
 }
 .cursor-ring {
   position: fixed;
+  top: 0; left: 0;
   pointer-events: none;
   z-index: 9998;
   width: 40px; height: 40px;
   border: 1px solid rgba(232,89,26,0.5);
   border-radius: 50%;
-  transform: translate(-50%, -50%);
-  transition: left 0.1s ease, top 0.1s ease, width 0.4s var(--t-slow), height 0.4s var(--t-slow), opacity 0.3s, border-color 0.3s;
-  mix-blend-mode: multiply;
+  transition: width 0.35s var(--t-slow), height 0.35s var(--t-slow), opacity 0.3s, border-color 0.3s;
+  will-change: transform;
 }
 .cursor-dot.hovered  { width: 10px; height: 10px; }
 .cursor-ring.hovered { width: 68px; height: 68px; opacity: 0.4; }
@@ -295,12 +296,12 @@ h1,h2,h3,h4,h5,h6 {
   width: 100%;
   z-index: 200;
   padding: 2rem 0;
-  mix-blend-mode: multiply;
-  transition: padding var(--t-mid), background var(--t-mid), mix-blend-mode var(--t-mid);
+  /* mix-blend-mode kaldırıldı (GPU pahalı, scroll sırasında jank yapıyordu) */
+  transition: padding var(--t-mid), background var(--t-mid);
+  will-change: background, padding;
 }
 /* — HERO MODE: transparent header with white text on dark hero — */
 .main-header.hero-mode {
-  mix-blend-mode: normal;
   background: transparent;
 }
 .main-header.hero-mode .desktop-nav a {
@@ -321,9 +322,7 @@ h1,h2,h3,h4,h5,h6 {
 .hamburger-btn.hero-mode .bar { background: rgba(255,255,255,0.85); }
 .main-header.scrolled {
   background: rgba(255,255,255,0.97);
-  mix-blend-mode: normal;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  /* backdrop-filter kaldırıldı — GPU compositing'i scroll sırasında ağırlaştırıyordu */
   border-bottom: 1px solid var(--border);
   padding: 1.2rem 0;
 }

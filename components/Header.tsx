@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -15,21 +15,59 @@ const NAV_LINKS = [
   { href: '/randevu',    label: 'Randevu' },
 ];
 
-/** Header'ın gözükmediği rotalar (kendi header'larını yöneten dashboard'lar) */
 const HEADER_HIDDEN = ['/panel', '/admin'];
 
 export default function Header() {
-  const [open, setOpen]         = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const pathname                = usePathname();
-  const isHeroMode = pathname === '/' && !scrolled;
+  const [open, setOpen] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
+  const logoImgRef = useRef<HTMLImageElement>(null);
+  const isHomePage = useRef(false);
+  const pathname = usePathname();
   const hidden = HEADER_HIDDEN.some(r => pathname === r || pathname?.startsWith(r + '/'));
 
+  // Scroll dinleyicisi React state'i değil, direkt className manipülasyonu
+  // kullanır — her scroll frame'inde re-render olmaz.
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 80);
+    if (hidden) return;
+    isHomePage.current = pathname === '/';
+    const header = headerRef.current;
+    if (!header) return;
+
+    let scrolled = window.scrollY > 80;
+    let raf = 0;
+    let pendingHeroMode = isHomePage.current && !scrolled;
+
+    const apply = () => {
+      raf = 0;
+      const next = window.scrollY > 80;
+      const heroMode = isHomePage.current && !next;
+      if (next !== scrolled) {
+        scrolled = next;
+        header.classList.toggle('scrolled', scrolled);
+      }
+      if (heroMode !== pendingHeroMode) {
+        pendingHeroMode = heroMode;
+        header.classList.toggle('hero-mode', heroMode);
+        // Logo invert efekti
+        const logo = logoImgRef.current;
+        if (logo) logo.style.filter = heroMode ? 'brightness(0) invert(1)' : 'none';
+      }
+    };
+
+    // İlk durum
+    header.classList.toggle('scrolled', scrolled);
+    header.classList.toggle('hero-mode', pendingHeroMode);
+    if (logoImgRef.current) {
+      logoImgRef.current.style.filter = pendingHeroMode ? 'brightness(0) invert(1)' : 'none';
+    }
+
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(apply); };
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [pathname, hidden]);
 
   useEffect(() => {
     const v = open ? 'hidden' : '';
@@ -40,20 +78,27 @@ export default function Header() {
 
   if (hidden) return null;
 
+  // hero-mode başlangıçta SSR-uyumlu (homepage için true, diğer sayfalar için false)
+  const initialHeroMode = pathname === '/';
+
   return (
     <>
-      <header className={`main-header${scrolled ? ' scrolled' : ''}${isHeroMode ? ' hero-mode' : ''}`}>
+      <header
+        ref={headerRef}
+        className={`main-header${initialHeroMode ? ' hero-mode' : ''}`}
+      >
         <div className="container header-inner">
           <Link href="/" className="header-logo" aria-label="Endamsince">
             <Image
+              ref={logoImgRef as any}
               src="/endam-logo.png"
               alt="Endamsince"
               width={200}
               height={52}
               style={{
                 objectFit: 'contain',
-                filter: isHeroMode ? 'brightness(0) invert(1)' : 'none',
-                transition: 'filter 0.5s ease',
+                filter: initialHeroMode ? 'brightness(0) invert(1)' : 'none',
+                transition: 'filter 0.4s ease',
               }}
               priority
             />
@@ -78,7 +123,7 @@ export default function Header() {
 
           <div className="hamburger-wrapper">
             <button
-              className={`hamburger-btn${open ? ' open' : ''}${isHeroMode ? ' hero-mode' : ''}`}
+              className={`hamburger-btn${open ? ' open' : ''}${initialHeroMode ? ' hero-mode' : ''}`}
               onClick={() => setOpen(!open)}
               aria-label={open ? 'Menüyü kapat' : 'Menüyü aç'}
             >
