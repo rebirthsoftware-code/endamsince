@@ -55,7 +55,7 @@ model TimeSlot {
 model Service {
   id          String         @id @default(cuid())
   name        String
-  price       String         // varsayılan / fallback fiyat
+  price       String         // default fallback price
   duration    String
   description String         @db.Text
   features    String[]
@@ -70,8 +70,8 @@ model Service {
   @@index([active, order])
 }
 
-// Şubeye özel fiyatlandırma. Bir kayıt yoksa Service.price default olarak
-// kullanılır.
+// Per-branch service pricing. If no row exists for a branch,
+// Service.price (default) is used.
 model ServicePrice {
   id        String   @id @default(cuid())
   serviceId String
