@@ -8,11 +8,12 @@ datasource db {
 }
 
 model Branch {
-  id        String      @id @default(cuid())
-  name      String
-  location  String
-  image     String?
-  personnel Personnel[]
+  id            String         @id @default(cuid())
+  name          String
+  location      String
+  image         String?
+  personnel     Personnel[]
+  servicePrices ServicePrice[]
 }
 
 model Personnel {
@@ -52,20 +53,37 @@ model TimeSlot {
 }
 
 model Service {
-  id          String   @id @default(cuid())
+  id          String         @id @default(cuid())
   name        String
-  price       String
+  price       String         // varsayılan / fallback fiyat
   duration    String
-  description String   @db.Text
+  description String         @db.Text
   features    String[]
   icon        String
-  popular     Boolean  @default(false)
-  active      Boolean  @default(true)
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  popular     Boolean        @default(false)
+  active      Boolean        @default(true)
+  order       Int            @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  branchPrices ServicePrice[]
 
   @@index([active, order])
+}
+
+// Şubeye özel fiyatlandırma. Bir kayıt yoksa Service.price default olarak
+// kullanılır.
+model ServicePrice {
+  id        String   @id @default(cuid())
+  serviceId String
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  branchId  String
+  branch    Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  price     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([serviceId, branchId])
+  @@index([branchId])
 }
 
 model PushSubscription {
