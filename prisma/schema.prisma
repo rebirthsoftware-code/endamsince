@@ -81,16 +81,17 @@ model PushSubscription {
 }
 
 model Appointment {
-  id            String    @id @default(cuid())
-  customerName  String
-  customerPhone String
-  date          String    // YYYY-MM-DD
-  time          String    // HH:MM
-  status        String    @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
-  personnelId   String
-  personnel     Personnel @relation(fields: [personnelId], references: [id])
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  customerName    String
+  customerPhone   String
+  date            String    // YYYY-MM-DD
+  time            String    // HH:MM
+  status          String    @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
+  personnelId     String
+  personnel       Personnel @relation(fields: [personnelId], references: [id])
+  reminderSentAt  DateTime? // hatırlatma push'u gönderildiyse zaman damgası
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
 
 // CMS-style content models managed via admin panel
