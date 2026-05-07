@@ -481,6 +481,79 @@
 .appt-btn-cancel span { font-size: 0.78rem; line-height: 1; }
 .appt-btn:active { transform: scale(0.98); }
 
+/* ─── WhatsApp & Hatırlatma butonları ─── */
+.appt-btn-wa {
+  background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+  border-color: #128C7E;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 600;
+}
+.appt-btn-wa:hover {
+  background: linear-gradient(135deg, #1ebe5d 0%, #0c6f64 100%);
+  border-color: #0c6f64;
+  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);
+}
+.appt-btn-remind {
+  background: #ECFDF5;
+  border-color: #25D366;
+  color: #128C7E;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 600;
+}
+.appt-btn-remind:hover {
+  background: #25D366;
+  border-color: #25D366;
+  color: #fff;
+}
+.appt-btn-remind.pulse {
+  background: #25D366;
+  color: #fff;
+  border-color: #128C7E;
+  animation: apptPulse 1.6s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.6);
+}
+@keyframes apptPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.55); }
+  50%      { box-shadow: 0 0 0 10px rgba(37, 211, 102, 0); }
+}
+
+/* ─── Yaklaşıyor badge ─── */
+.appt-row-tags { display: inline-flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.appt-badge {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.appt-badge-soon {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: #fff;
+  animation: apptSoonGlow 1.6s ease-in-out infinite;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+}
+@keyframes apptSoonGlow {
+  0%, 100% { transform: scale(1);     box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35); }
+  50%      { transform: scale(1.06);  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.55); }
+}
+
+/* Yaklaşıyor durumdaki kartın sol şeridi belirginleşsin */
+.appt-card.approaching {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: linear-gradient(to right, rgba(245, 158, 11, 0.04), transparent 30%);
+}
+.appt-card.approaching .appt-side {
+  background: linear-gradient(to bottom, #f59e0b, #ef4444) !important;
+  width: 5px;
+}
+
 /* İptal edilmiş randevu kartı: solgun + üzerine ince çizgi */
 .appt-card.status-cancelled {
   opacity: 0.7;

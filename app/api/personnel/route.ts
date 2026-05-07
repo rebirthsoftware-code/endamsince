@@ -10,6 +10,7 @@ export async function GET(request: Request) {
   try {
     const personnel = await prisma.personnel.findMany({
       where: branchId ? { branchId } : undefined,
+      include: { branch: { select: { id: true, name: true, location: true } } },
     });
     return NextResponse.json(personnel);
   } catch (error) {

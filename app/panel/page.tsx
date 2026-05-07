@@ -2,12 +2,25 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import PushSubscribeButton from '@/components/PushSubscribeButton';
+import {
+  approvalMessage,
+  reminderMessage,
+  buildWhatsAppUrl,
+  hoursUntil,
+} from '@/lib/whatsapp';
 import './Panel.css';
+
+/** Yaklaşıyor sayılan eşik (saat). */
+const APPROACHING_HOURS = 2;
 
 const SESSION_KEY = 'endamsince_panel_session_v1';
 const REFRESH_MS = 30_000;
 
-type Personnel = { id: string; name: string; role: string; image?: string | null; branchId?: string };
+type Personnel = {
+  id: string; name: string; role: string; image?: string | null;
+  branchId?: string;
+  branch?: { id: string; name: string; location?: string };
+};
 type Appointment = {
   id: string;
   customerName: string;
@@ -309,7 +322,15 @@ export default function Panel() {
         ) : (
           <ul className="appt-list">
             {filtered.map((a) => (
-              <AppointmentCard key={a.id} appt={a} onUpdate={updateStatus} />
+              <AppointmentCard
+                key={a.id}
+                appt={a}
+                onUpdate={updateStatus}
+                now={now}
+                branchName={
+                  personnelList.find((p) => p.id === selectedPersonnel)?.branch?.name
+                }
+              />
             ))}
           </ul>
         )}
@@ -341,12 +362,26 @@ function StatCard({
 }
 
 function AppointmentCard({
-  appt, onUpdate,
+  appt, onUpdate, now, branchName,
 }: {
   appt: Appointment;
   onUpdate: (id: string, status: Appointment['status']) => void;
+  now: Date;
+  branchName?: string;
 }) {
   const phoneClean = (appt.customerPhone || '').replace(/\s+/g, '');
+
+  const ctx = {
+    customerName: appt.customerName,
+    customerPhone: appt.customerPhone,
+    date: appt.date,
+    time: appt.time,
+    branchName,
+  };
+
+  const hLeft = hoursUntil(appt.date, appt.time, now);
+  const isFuture = hLeft > 0;
+  const isApproaching = isFuture && hLeft <= APPROACHING_HOURS && appt.status === 'APPROVED';
 
   const handleCancel = () => {
     if (confirm(`${appt.customerName} - ${formatDate(appt.date)} ${appt.time} randevusunu iptal etmek istediğinize emin misiniz?`)) {
@@ -354,8 +389,21 @@ function AppointmentCard({
     }
   };
 
+  /** Onayla + WhatsApp onay mesajı tek hareket. */
+  const handleApproveWithWhatsApp = () => {
+    onUpdate(appt.id, 'APPROVED');
+    const url = buildWhatsAppUrl(appt.customerPhone, approvalMessage(ctx));
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  /** Hatırlatma — onaylı randevular için. */
+  const handleReminder = () => {
+    const url = buildWhatsAppUrl(appt.customerPhone, reminderMessage(ctx));
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
-    <li className={`appt-card status-${appt.status.toLowerCase()}`}>
+    <li className={`appt-card status-${appt.status.toLowerCase()} ${isApproaching ? 'approaching' : ''}`}>
       <div className="appt-side" aria-hidden />
 
       <div className="appt-time-block">
@@ -366,9 +414,16 @@ function AppointmentCard({
       <div className="appt-body">
         <div className="appt-row-top">
           <h3 className="appt-name">{appt.customerName}</h3>
-          <span className={`appt-status appt-status-${appt.status.toLowerCase()}`}>
-            {STATUS_LABEL[appt.status]}
-          </span>
+          <div className="appt-row-tags">
+            {isApproaching && (
+              <span className="appt-badge appt-badge-soon" title={`Yaklaşık ${Math.max(1, Math.round(hLeft * 60))} dk kaldı`}>
+                ⏰ YAKLAŞIYOR
+              </span>
+            )}
+            <span className={`appt-status appt-status-${appt.status.toLowerCase()}`}>
+              {STATUS_LABEL[appt.status]}
+            </span>
+          </div>
         </div>
 
         <div className="appt-phone">
@@ -392,10 +447,11 @@ function AppointmentCard({
               Reddet
             </button>
             <button
-              className="appt-btn appt-btn-approve"
-              onClick={() => onUpdate(appt.id, 'APPROVED')}
+              className="appt-btn appt-btn-approve appt-btn-wa"
+              onClick={handleApproveWithWhatsApp}
+              title="Randevuyu onayla ve WhatsApp ile müşteriye onay mesajı gönder"
             >
-              Onayla
+              <span aria-hidden>✅</span> Onayla & WhatsApp
             </button>
           </div>
         )}
@@ -403,10 +459,17 @@ function AppointmentCard({
         {appt.status === 'APPROVED' && (
           <div className="appt-actions">
             <button
+              className={`appt-btn appt-btn-remind ${isApproaching ? 'pulse' : ''}`}
+              onClick={handleReminder}
+              title="Müşteriye WhatsApp üzerinden hatırlatma gönder"
+            >
+              <span aria-hidden>💬</span> {isApproaching ? 'Hatırlat (Yaklaşıyor!)' : 'WhatsApp Hatırlat'}
+            </button>
+            <button
               className="appt-btn appt-btn-cancel"
               onClick={handleCancel}
             >
-              <span aria-hidden>✕</span> Randevuyu İptal Et
+              <span aria-hidden>✕</span> İptal
             </button>
           </div>
         )}
