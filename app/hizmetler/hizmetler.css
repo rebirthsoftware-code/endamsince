@@ -160,3 +160,45 @@
   color: var(--text-dark);
 }
 .faq-a { font-size: 0.95rem; line-height: 1.8; }
+
+/* ── Şube sekmeleri (fiyat seçici) ── */
+.branch-tabs {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.4rem;
+  background: var(--surface, #f7f7f7);
+  border-radius: 14px;
+  border: 1px solid var(--border, #eaeaea);
+}
+.branch-tabs-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-muted, #666);
+  font-weight: 600;
+}
+.branch-tabs-list { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.branch-tab {
+  background: #fff;
+  border: 1.5px solid var(--border, #eaeaea);
+  color: var(--text-mid, #333);
+  padding: 0.55rem 1.2rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.18s;
+}
+.branch-tab:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+  transform: translateY(-1px);
+}
+.branch-tab.active {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(232, 89, 26, 0.25);
+}

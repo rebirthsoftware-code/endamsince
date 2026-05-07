@@ -381,6 +381,7 @@ const EMPTY_SERVICE: Omit<Service, 'id'> = {
 
 function ServicesTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', m: string) => void }) {
   const [list, setList] = useState<Service[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Service | null>(null);
   const [creating, setCreating] = useState(false);
@@ -388,28 +389,55 @@ function ServicesTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await adminFetch('/api/admin/services', { headers: authHeaders(pin) });
-      if (res.ok) setList(await res.json());
+      const [sRes, bRes] = await Promise.all([
+        adminFetch('/api/admin/services', { headers: authHeaders(pin) }),
+        adminFetch('/api/admin/branches', { headers: authHeaders(pin) }),
+      ]);
+      if (sRes.ok) setList(await sRes.json());
+      if (bRes.ok) setBranches(await bRes.json());
     } finally {
       setLoading(false);
     }
   }, [pin]);
   useEffect(() => { load(); }, [load]);
 
-  const save = async (data: Omit<Service, 'id'>, id?: string) => {
+  /** Service data + opsiyonel branch price overrides'ı kaydet. */
+  const save = async (
+    data: Omit<Service, 'id'>,
+    id?: string,
+    branchPrices?: { branchId: string; price: string }[]
+  ) => {
     const res = await fetch(id ? `/api/admin/services/${id}` : '/api/admin/services', {
       method: id ? 'PATCH' : 'POST',
       headers: authHeaders(pin),
       body: JSON.stringify(data),
     });
-    if (res.ok) {
-      showToast('ok', id ? 'Güncellendi' : 'Eklendi');
-      await load();
-      setEditing(null);
-      setCreating(false);
-    } else {
-      showToast('err', 'Kaydedilemedi');
+    if (!res.ok) { showToast('err', 'Kaydedilemedi'); return; }
+
+    // Service kaydedildi; ID'sini bul
+    let serviceId = id;
+    if (!serviceId) {
+      try {
+        const created = await res.json();
+        serviceId = created.id;
+      } catch {}
     }
+
+    // Şube fiyatlarını upsert et
+    if (serviceId && branchPrices) {
+      try {
+        await fetch(`/api/admin/services/${serviceId}/prices`, {
+          method: 'PUT',
+          headers: authHeaders(pin),
+          body: JSON.stringify(branchPrices),
+        });
+      } catch (e) { console.error('Branch prices kaydedilemedi:', e); }
+    }
+
+    showToast('ok', id ? 'Güncellendi' : 'Eklendi');
+    await load();
+    setEditing(null);
+    setCreating(false);
   };
 
   const remove = async (id: string) => {
@@ -474,8 +502,11 @@ function ServicesTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err
       {(editing || creating) && (
         <ServiceModal
           initial={editing ? editing : { ...EMPTY_SERVICE, order: list.length + 1 }}
+          editingId={editing?.id}
+          branches={branches}
+          pin={pin}
           onClose={() => { setEditing(null); setCreating(false); }}
-          onSave={(d) => save(d, editing?.id)}
+          onSave={(d, prices) => save(d, editing?.id, prices)}
         />
       )}
     </section>
@@ -483,11 +514,14 @@ function ServicesTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err
 }
 
 function ServiceModal({
-  initial, onClose, onSave,
+  initial, editingId, branches, pin, onClose, onSave,
 }: {
   initial: Omit<Service, 'id'> | Service;
+  editingId?: string;
+  branches: Branch[];
+  pin: string;
   onClose: () => void;
-  onSave: (data: Omit<Service, 'id'>) => void;
+  onSave: (data: Omit<Service, 'id'>, branchPrices: { branchId: string; price: string }[]) => void;
 }) {
   const [form, setForm] = useState<Omit<Service, 'id'>>({
     name: initial.name,
@@ -502,12 +536,38 @@ function ServiceModal({
   });
   const [featureText, setFeatureText] = useState((initial.features ?? []).join('\n'));
 
+  // Şubeye özel fiyatlar — branchId → price haritası (boş = override yok)
+  const [branchPrices, setBranchPrices] = useState<Record<string, string>>({});
+  const [loadingPrices, setLoadingPrices] = useState(false);
+
+  // Editing modunda mevcut override'ları çek
+  useEffect(() => {
+    if (!editingId) return;
+    setLoadingPrices(true);
+    fetch(`/api/admin/services/${editingId}/prices`, { headers: authHeaders(pin) })
+      .then((r) => r.ok ? r.json() : [])
+      .then((rows: Array<{ branchId: string; price: string }>) => {
+        const map: Record<string, string> = {};
+        for (const r of rows) map[r.branchId] = r.price;
+        setBranchPrices(map);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingPrices(false));
+  }, [editingId, pin]);
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
-      ...form,
-      features: featureText.split('\n').map((x) => x.trim()).filter(Boolean),
-    });
+    const prices = branches.map((b) => ({
+      branchId: b.id,
+      price: (branchPrices[b.id] || '').trim(),
+    }));
+    onSave(
+      {
+        ...form,
+        features: featureText.split('\n').map((x) => x.trim()).filter(Boolean),
+      },
+      prices,
+    );
   };
 
   return (
@@ -531,13 +591,35 @@ function ServiceModal({
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
           </Field>
           <div className="admin-row-2">
-            <Field label="Fiyat (örn: 350₺)" required>
+            <Field label="Varsayılan Fiyat (örn: 350₺)" required>
               <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
             </Field>
             <Field label="Süre (örn: 45 dk)">
               <input value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} />
             </Field>
           </div>
+
+          {/* ───── Şubeye özel fiyatlandırma ───── */}
+          {branches.length > 0 && (
+            <div className="admin-field">
+              <span>Şubeye Özel Fiyatlar (boş bırakılan şube varsayılan fiyatı kullanır)</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12, background: 'rgba(0,0,0,0.03)', borderRadius: 8 }}>
+                {loadingPrices && <em style={{ fontSize: 12, opacity: 0.6 }}>fiyatlar yükleniyor…</em>}
+                {branches.map((b) => (
+                  <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ minWidth: 140, fontWeight: 600, fontSize: 13 }}>📍 {b.name}</span>
+                    <input
+                      placeholder={`Varsayılan: ${form.price || '—'}`}
+                      value={branchPrices[b.id] ?? ''}
+                      onChange={(e) => setBranchPrices((m) => ({ ...m, [b.id]: e.target.value }))}
+                      style={{ flex: 1 }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <Field label="Açıklama">
             <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </Field>
