@@ -89,7 +89,7 @@ model Appointment {
   status          String    @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
   personnelId     String
   personnel       Personnel @relation(fields: [personnelId], references: [id])
-  reminderSentAt  DateTime? // hatırlatma push'u gönderildiyse zaman damgası
+  reminderSentAt  DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }
