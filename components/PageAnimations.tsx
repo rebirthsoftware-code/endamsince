@@ -15,6 +15,35 @@ export default function PageAnimations() {
     // Eski trigger'ları temizle
     ScrollTrigger.getAll().forEach(t => t.kill());
 
+    /** Loading ekranı varsa bittikten sonra başlat — geçişte takılmayı önler */
+    let cleanup: (() => void) | undefined;
+    let lsDoneListener: (() => void) | undefined;
+
+    const start = () => {
+      cleanup = setupAnimations();
+      // Yerleşim bittiyse trigger'ları yeniden hesapla
+      requestAnimationFrame(() => ScrollTrigger.refresh());
+    };
+
+    const ls = document.querySelector('.ls-root');
+    if (ls) {
+      lsDoneListener = () => start();
+      window.addEventListener('ls:done', lsDoneListener, { once: true });
+    } else {
+      // Loading ekranı yoksa (route değişimi vs.) anında başlat
+      start();
+    }
+
+    return () => {
+      if (lsDoneListener) window.removeEventListener('ls:done', lsDoneListener);
+      cleanup?.();
+    };
+  }, [pathname]);
+
+  return null;
+}
+
+function setupAnimations(): () => void {
     /* ── Ortak animasyonlu element selectors ──────────────── */
     const ALL = [
       '.page-hero h1',
@@ -194,7 +223,4 @@ export default function PageAnimations() {
     return () => {
       ScrollTrigger.getAll().forEach(t => t.kill());
     };
-  }, [pathname]); // pathname değişince yeniden çalış
-
-  return null;
 }
