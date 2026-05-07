@@ -48,3 +48,6 @@ next-env.d.ts
 *.db-shm
 *.db-wal
 .env*.local
+
+# Claude Code workspace
+.claude/
