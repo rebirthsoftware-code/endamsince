@@ -14,7 +14,10 @@ import './Panel.css';
 const APPROACHING_HOURS = 2;
 
 const SESSION_KEY = 'endamsince_panel_session_v1';
+const REMINDED_KEY = 'endamsince_panel_reminded_v1';
 const REFRESH_MS = 30_000;
+/** Tarayıcı bildirimini ne kadar önce ateşleyelim (saat). */
+const REMIND_HOURS_BEFORE = 2;
 
 type Personnel = {
   id: string; name: string; role: string; image?: string | null;
@@ -89,11 +92,69 @@ export default function Panel() {
       .catch(console.error);
   }, []);
 
-  /* ── Saati gerçek zamanlı tut (header için) ── */
+  /* ── Saati gerçek zamanlı tut (header + reminder kontrolü) ── */
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 60_000);
+    const id = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(id);
   }, []);
+
+  /* ── Yaklaşan randevular için tarayıcı bildirimi ── */
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    if (typeof window === 'undefined') return;
+    if (typeof Notification === 'undefined') return;
+    if (Notification.permission !== 'granted') return;
+    if (appointments.length === 0) return;
+
+    let reminded: Record<string, number> = {};
+    try { reminded = JSON.parse(localStorage.getItem(REMINDED_KEY) || '{}'); } catch {}
+
+    let changed = false;
+    const cutoff = Date.now() - 24 * 3_600_000;
+    // Eski kayıtları temizle (24 saatten yaşlı)
+    for (const k of Object.keys(reminded)) {
+      if ((reminded[k] || 0) < cutoff) { delete reminded[k]; changed = true; }
+    }
+
+    for (const a of appointments) {
+      if (a.status !== 'APPROVED') continue;
+      const h = (new Date(`${a.date}T${a.time}:00`).getTime() - now.getTime()) / 3_600_000;
+      if (h <= 0 || h > REMIND_HOURS_BEFORE) continue;
+      if (reminded[a.id]) continue;
+
+      try {
+        const minutesLeft = Math.max(1, Math.round(h * 60));
+        const title = `⏰ Yaklaşan Randevu — ${a.customerName}`;
+        const body = `${a.time} (${minutesLeft} dk içinde) · ${a.customerPhone}`;
+        // Service worker üzerinden göster (kapalı sekmede de çalışır), yoksa direkt Notification
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.ready.then((reg) => {
+            reg.showNotification(title, {
+              body,
+              icon: '/icons/icon-192.png',
+              badge: '/icons/icon-192.png',
+              tag: `reminder-${a.id}`,
+              requireInteraction: true,
+              data: { url: '/panel' },
+            } as NotificationOptions).catch(() => {
+              try { new Notification(title, { body, icon: '/icons/icon-192.png', tag: `reminder-${a.id}` }); } catch {}
+            });
+          });
+        } else {
+          new Notification(title, { body, icon: '/icons/icon-192.png', tag: `reminder-${a.id}` });
+        }
+      } catch (e) {
+        console.error('Reminder notification error:', e);
+      }
+
+      reminded[a.id] = Date.now();
+      changed = true;
+    }
+
+    if (changed) {
+      try { localStorage.setItem(REMINDED_KEY, JSON.stringify(reminded)); } catch {}
+    }
+  }, [now, appointments, isLoggedIn]);
 
   /* ── Randevu çekme ── */
   const fetchAppointments = useCallback(async (personnelId: string, silent = false) => {
