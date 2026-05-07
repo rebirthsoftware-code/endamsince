@@ -78,6 +78,68 @@
 .input-lg  { padding: 1rem 1.2rem; font-size: 1rem; }
 .btn-lg    { padding: 1rem 2rem; font-size: 1rem; }
 
+/* ─── Randevu sayfası ana butonu ─── */
+.booking-card .btn.btn-primary,
+.booking-card .btn-primary {
+  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark, #c84a14) 100%);
+  color: #fff !important;
+  border: none;
+  border-radius: 999px;
+  padding: 1.05rem 2.4rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  box-shadow: 0 12px 28px rgba(232, 89, 26, 0.32), 0 2px 6px rgba(232, 89, 26, 0.2);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+.booking-card .btn.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+.booking-card .btn.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 18px 36px rgba(232, 89, 26, 0.42), 0 4px 10px rgba(232, 89, 26, 0.25);
+  filter: brightness(1.05);
+}
+.booking-card .btn.btn-primary:hover::before { transform: translateX(100%); }
+.booking-card .btn.btn-primary:active:not(:disabled) { transform: translateY(0) scale(0.99); }
+.booking-card .btn.btn-primary:disabled {
+  opacity: 0.5; cursor: not-allowed;
+  box-shadow: 0 4px 12px rgba(232, 89, 26, 0.18);
+  filter: grayscale(0.3);
+}
+
+.booking-card .btn.btn-outline {
+  background: transparent;
+  color: var(--text-mid, #444);
+  border: 1.5px solid rgba(0,0,0,0.18);
+  border-radius: 999px;
+  padding: 0.95rem 1.8rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.booking-card .btn.btn-outline:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+  background: rgba(232, 89, 26, 0.05);
+}
+
 .flex-between { display: flex; justify-content: space-between; align-items: center; }
 .flex-grow    { flex-grow: 1; }
 .gap-4 { gap: 1rem; }
@@ -132,49 +194,59 @@
 }
 .time-slot {
   position: relative;
-  padding: 0.95rem 0.5rem;
-  background: #fff;
-  border: 1.5px solid var(--border, #e5e5e5);
+  padding: 1rem 0.5rem;
+  background: #ecfdf5;                /* açık yeşil — boş, müsait */
+  border: 1.8px solid #10b981;        /* canlı yeşil çerçeve */
   border-radius: 12px;
   font-family: 'Inter', sans-serif;
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--text-dark, #1a1a1a);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #065f46;                     /* koyu yeşil yazı */
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.22s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.25rem;
+  box-shadow: 0 1px 0 rgba(16, 185, 129, 0.05);
 }
 .time-slot:hover:not(:disabled) {
-  border-color: var(--orange, #E8591A);
+  background: #d1fae5;
+  border-color: #059669;
   transform: translateY(-2px);
-  box-shadow: 0 6px 14px rgba(232,89,26,0.15);
+  box-shadow: 0 8px 18px rgba(16, 185, 129, 0.22);
 }
 .time-slot.selected {
   background: var(--orange, #E8591A);
   border-color: var(--orange, #E8591A);
   color: #fff;
+  box-shadow: 0 8px 22px rgba(232, 89, 26, 0.35);
 }
 .time-slot.taken {
-  background: #f5f5f5;
-  border-color: #e0e0e0;
-  color: #aaa;
+  background: #fef2f2;                /* açık kırmızı — dolu */
+  border-color: #ef4444;              /* kırmızı çerçeve */
+  color: #b91c1c;                     /* koyu kırmızı */
   cursor: not-allowed;
   text-decoration: line-through;
-  text-decoration-color: rgba(0,0,0,0.25);
+  text-decoration-color: rgba(185, 28, 28, 0.55);
+  box-shadow: none;
+  opacity: 0.9;
 }
-.time-slot-hr { font-weight: 600; letter-spacing: 0.04em; }
+.time-slot.taken:hover { transform: none; }
+.time-slot-hr { font-weight: 700; letter-spacing: 0.04em; font-size: 1.05rem; }
 .time-slot-badge {
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #c44;
+  color: #b91c1c;
   text-decoration: none;
+  background: rgba(239, 68, 68, 0.12);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 2px;
 }
-.time-slot.selected .time-slot-badge { color: #fff; }
+.time-slot.selected .time-slot-badge { color: #fff; background: rgba(255,255,255,0.18); }
 
 /* ── Hata kutusu ── */
 .error-box {

@@ -4,9 +4,7 @@ import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import './LoadingScreen.css';
 
-type Phase = 'loading' | 'tagline' | 'title' | 'scissors' | 'scissors-open' | 'done';
-
-const TAGLINE = 'Ustanın elinden geçen her tıraş,\nbir sanat eseridir.';
+type Phase = 'loading' | 'title' | 'scissors' | 'scissors-open' | 'done';
 
 /** Loading ekranının gösterilmediği rotalar (PWA/standalone deneyim için) */
 const SKIP_ROUTES = ['/panel', '/admin'];
@@ -32,7 +30,7 @@ export default function LoadingScreen() {
     };
   }, [skip]);
 
-  /* ── Phase 1: counter 0→100 in ~2.5s ── */
+  /* ── Phase 1: counter 0→100 in ~2.5s, sonra direkt title ── */
   useEffect(() => {
     const DURATION = 2500;
     const start = Date.now();
@@ -42,28 +40,21 @@ export default function LoadingScreen() {
       setCount(Math.round(e * 100));
       if (p >= 1) {
         clearInterval(id);
-        setTimeout(() => setPhase('tagline'), 400);
+        setTimeout(() => setPhase('title'), 400);
       }
     }, 16);
     return () => clearInterval(id);
   }, []);
 
-  /* ── Phase 2: tagline holds 3.4s then → title ── */
-  useEffect(() => {
-    if (phase !== 'tagline') return;
-    const id = setTimeout(() => setPhase('title'), 3600);
-    return () => clearTimeout(id);
-  }, [phase]);
-
-  /* ── Phase 3: Click → blades CLOSE → then OPEN (curtain reveal) → done ── */
-  const handleClick = useCallback(() => {
-    if (phase !== 'title' || clicked) return;
+  /* ── Title → makas animasyonu → kapanış ── */
+  const startTransition = useCallback(() => {
+    if (clicked) return;
     setClicked(true);
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    setPhase('scissors');                            // blades close
+    setPhase('scissors');
     setTimeout(() => {
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-      setPhase('scissors-open');                     // blades open — sayfa burada görünür
+      setPhase('scissors-open');
     }, 900);
     setTimeout(() => {
       document.documentElement.style.overflow = '';
@@ -72,7 +63,40 @@ export default function LoadingScreen() {
       setPhase('done');
       window.dispatchEvent(new Event('ls:done'));
     }, 1820);
-  }, [phase, clicked]);
+  }, [clicked]);
+
+  /* ── Title ekranında kaydırma (wheel/touch) animasyonu tetiklesin ── */
+  useEffect(() => {
+    if (phase !== 'title') return;
+
+    let touchStartY = 0;
+    const onWheel = (e: WheelEvent) => {
+      // Aşağı kaydırma → animasyonu başlat
+      if (e.deltaY > 4) startTransition();
+    };
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0]?.clientY ?? 0;
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      const dy = (e.touches[0]?.clientY ?? 0) - touchStartY;
+      if (dy < -16) startTransition(); // yukarı sürükle → aşağı kaydırma
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (['ArrowDown', 'PageDown', 'Space', 'Enter'].includes(e.code)) startTransition();
+    };
+
+    window.addEventListener('wheel', onWheel, { passive: true });
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('keydown', onKey);
+
+    return () => {
+      window.removeEventListener('wheel', onWheel);
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [phase, startTransition]);
 
   /* ── Mouse parallax + blur on title screen ── */
   useEffect(() => {
@@ -95,9 +119,8 @@ export default function LoadingScreen() {
   return (
     <div
       className="ls-root"
-      onClick={phase === 'title' ? handleClick : undefined}
       style={{
-        cursor: phase === 'title' ? 'none' : 'default',
+        cursor: 'default',
         /* During re-open: make bg transparent so site shows behind blades */
         background: phase === 'scissors-open' ? 'transparent' : '#060606',
         pointerEvents: phase === 'scissors-open' ? 'none' : 'all',
@@ -159,26 +182,6 @@ export default function LoadingScreen() {
             <span className="ls-footer-text">[ PLUS · URBAN · JUNIOR ]</span>
             <span className="ls-footer-text">ZONGULDAK</span>
           </div>
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════
-          PHASE 2 — TAGLINE  (film title card)
-      ══════════════════════════════════════════ */}
-      {phase === 'tagline' && (
-        <div className="ls-tagline-phase">
-          <div className="ls-grain" aria-hidden />
-          <p className="ls-film-text">
-            {TAGLINE.split('\n').map((line, i) => (
-              <span
-                key={i}
-                className="ls-film-line"
-                style={{ animationDelay: `${i * 0.7}s` }}
-              >
-                {line}
-              </span>
-            ))}
-          </p>
         </div>
       )}
 
@@ -248,8 +251,8 @@ export default function LoadingScreen() {
               </div>
 
               <div className="ls-click-cue">
-                <span className="ls-click-text">Devam etmek için tıkla</span>
-                <div className="ls-click-line" />
+                <span className="ls-click-text">Devam etmek için aşağı kaydırın</span>
+                <div className="ls-scroll-arrow" aria-hidden>↓</div>
               </div>
 
               <div className="ls-title-bl">
