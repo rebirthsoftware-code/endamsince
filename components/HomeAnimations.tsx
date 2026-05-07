@@ -19,19 +19,35 @@ function playHeroSequence() {
   tl.fromTo('.hero-bottom', { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 1.0 }, 1.0);
   tl.fromTo('.hero-scroll-cue', { opacity: 0 }, { opacity: 1, duration: 1.0 }, 1.4);
 
-  // Stat counters
-  const statEls  = document.querySelectorAll('.hero-stat-val');
-  const targets  = [15000, 45, 3];
-  const suffixes = ['K+', '+', ''];
-  statEls.forEach((el, i) => {
+  // Stat counters — DB'den gelen değerleri (örn. '15K+', '45+', '3') koruyarak
+  // 0'dan hedefe say. Sayısal kısmı parse edip suffix'i ayrı tut.
+  const statEls = document.querySelectorAll<HTMLElement>('.hero-stat-val');
+  statEls.forEach((el) => {
+    const original = (el.textContent || '').trim();
+    if (!original) return;
+    const match = original.match(/^([\d.,]+)\s*([KMkm]?\+?.*)$/);
+    if (!match) return;
+    const numStr = match[1].replace(/[.,]/g, '');
+    const suffix = match[2] || '';
+    let target = parseInt(numStr, 10);
+    if (isNaN(target)) return;
+    // 'K' suffix'i varsa hedef bin katı (örn. 15K+ → 15000)
+    const isThousand = /[Kk]/.test(suffix);
+    if (isThousand) target = target * 1000;
     const obj = { val: 0 };
     gsap.to(obj, {
-      val: targets[i], duration: 2.2, delay: 1.2 + i * 0.12, ease: 'power3.out',
+      val: target, duration: 1.8, delay: 0.8, ease: 'power3.out',
       onUpdate() {
         const v = Math.round(obj.val);
-        el.textContent = i === 0
-          ? (v >= 1000 ? Math.round(v / 1000) + suffixes[i] : v + '')
-          : v + suffixes[i];
+        if (isThousand) {
+          el.textContent = (v >= 1000 ? Math.round(v / 1000) : v) + suffix;
+        } else {
+          el.textContent = v + suffix;
+        }
+      },
+      onComplete() {
+        // Animasyon bitiminde DB'den gelen orijinal yazıyı geri yaz (kesinlik için)
+        el.textContent = original;
       },
     });
   });
