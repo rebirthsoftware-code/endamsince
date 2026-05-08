@@ -6,6 +6,7 @@ import {
   approvalMessage,
   reminderMessage,
   cancellationMessage,
+  rejectionMessage,
   buildWhatsAppUrl,
   hoursUntil,
 } from '@/lib/whatsapp';
@@ -645,6 +646,14 @@ function AppointmentCard({
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  /** Reddet + WhatsApp red mesajı. */
+  const handleRejectWithWhatsApp = () => {
+    if (!confirm(`${appt.customerName} - ${formatDate(appt.date)} ${appt.time} randevusunu reddetmek istediğinize emin misiniz?`)) return;
+    onUpdate(appt.id, 'REJECTED');
+    const url = buildWhatsAppUrl(appt.customerPhone, rejectionMessage(ctx));
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   /** Hatırlatma — onaylı randevular için. */
   const handleReminder = () => {
     const url = buildWhatsAppUrl(appt.customerPhone, reminderMessage(ctx));
@@ -691,9 +700,10 @@ function AppointmentCard({
           <div className="appt-actions">
             <button
               className="appt-btn appt-btn-reject"
-              onClick={() => onUpdate(appt.id, 'REJECTED')}
+              onClick={handleRejectWithWhatsApp}
+              title="Randevuyu reddet ve WhatsApp ile bilgi ver"
             >
-              Reddet
+              Reddet & WhatsApp
             </button>
             <button
               className="appt-btn appt-btn-approve appt-btn-wa"
