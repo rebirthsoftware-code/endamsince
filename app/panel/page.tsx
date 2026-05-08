@@ -490,6 +490,27 @@ function BlockSlotsModal({
     }
   };
 
+  const blockedToday = useMemo(
+    () => Array.from(slotState.values()).filter((a) => a.customerName === MANUAL_BLOCK_NAME),
+    [slotState]
+  );
+
+  const unblockAll = async () => {
+    if (blockedToday.length === 0) return;
+    if (!confirm(`${date} tarihindeki ${blockedToday.length} bloku kaldırmak istediğinize emin misiniz?`)) return;
+    setErr('');
+    try {
+      await Promise.all(
+        blockedToday.map((a) =>
+          fetch(`/api/panel/appointments/${a.id}`, { method: 'DELETE' })
+        )
+      );
+      onChanged();
+    } catch {
+      setErr('Bağlantı hatası.');
+    }
+  };
+
   const unblockSlot = async (id: string, time: string) => {
     setErr('');
     setBusyTime(time);
@@ -526,8 +547,18 @@ function BlockSlotsModal({
           </label>
 
           <p className="panel-modal-hint">
-            Boş saate tıkla → doluya al. Manuel bloku açmak için tekrar tıkla. 🔒 işaretli gerçek randevular değiştirilemez.
+            Boş saate tıkla → blokla. Bloklu saate (✕) tıkla → kaldır. 🔒 işaretli gerçek randevular değiştirilemez.
           </p>
+
+          {blockedToday.length > 0 && (
+            <button
+              type="button"
+              className="panel-modal-unblock-all"
+              onClick={unblockAll}
+            >
+              Bu Tarihteki Tüm Blokları Kaldır ({blockedToday.length})
+            </button>
+          )}
 
           <div className="panel-modal-slots">
             {loadingSlots ? (
@@ -561,12 +592,13 @@ function BlockSlotsModal({
                         isRealBooking
                           ? `${appt?.customerName} — gerçek randevu, kilitli`
                           : isManualBlock
-                          ? 'Manuel blok — tıkla, açılsın'
+                          ? 'Manuel blok — tıkla, kaldır'
                           : 'Boş — tıkla, blokla'
                       }
                     >
                       {isRealBooking && <span className="slot-icon" aria-hidden>🔒</span>}
-                      {s}
+                      <span>{s}</span>
+                      {isManualBlock && <span className="slot-remove" aria-hidden>✕</span>}
                     </button>
                   );
                 })}
