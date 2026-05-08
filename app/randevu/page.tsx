@@ -13,7 +13,8 @@ function RandevuContent() {
   const [personnel, setPersonnel] = useState<any[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string>(branchIdParam || '');
   const [selectedPersonnel, setSelectedPersonnel] = useState<string>('');
-  const [date, setDate] = useState<string>('');
+  // Tarih input'u boş gözükmesin diye bugünü varsayılan yap (kullanıcı değiştirebilir)
+  const [date, setDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState<string>('');
   const [customerName, setCustomerName] = useState<string>('');
   const [customerPhone, setCustomerPhone] = useState<string>('0');
