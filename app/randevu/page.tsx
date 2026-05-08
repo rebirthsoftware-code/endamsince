@@ -16,7 +16,7 @@ function RandevuContent() {
   const [date, setDate] = useState<string>('');
   const [time, setTime] = useState<string>('');
   const [customerName, setCustomerName] = useState<string>('');
-  const [customerPhone, setCustomerPhone] = useState<string>('');
+  const [customerPhone, setCustomerPhone] = useState<string>('0');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [takenTimes, setTakenTimes] = useState<string[]>([]);
@@ -245,12 +245,27 @@ function RandevuContent() {
             </div>
             <div className="input-group mt-6">
               <label className="input-label">Telefon Numaranız <span className="text-danger">*</span></label>
-              <input required type="tel" className="input-field input-lg focus-gold" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="05XX XXX XX XX" />
+              <input
+                required
+                type="tel"
+                inputMode="numeric"
+                className="input-field input-lg focus-gold"
+                value={customerPhone}
+                onChange={e => {
+                  // "0" prefiksi her zaman sabit kalsın; kullanıcı silmeye/değiştirmeye çalışsa bile
+                  const v = e.target.value;
+                  const rest = v.startsWith('0') ? v.slice(1) : v;
+                  // sadece rakamlar
+                  const digits = rest.replace(/\D/g, '').slice(0, 10);
+                  setCustomerPhone('0' + digits);
+                }}
+                placeholder="0 5XX XXX XX XX"
+              />
             </div>
 
             <div className="flex-between mt-10 gap-4">
               <button type="button" className="btn btn-outline" onClick={prevStep}>Geri</button>
-              <button type="submit" className="btn btn-primary flex-grow btn-lg" disabled={!customerName || !customerPhone || isSubmitting}>
+              <button type="submit" className="btn btn-primary flex-grow btn-lg" disabled={!customerName || customerPhone.length < 11 || isSubmitting}>
                 {isSubmitting ? 'Onaylanıyor...' : 'Randevuyu Tamamla'}
               </button>
             </div>

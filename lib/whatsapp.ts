@@ -90,6 +90,19 @@ export function reminderMessage(ctx: WhatsAppContext): string {
   );
 }
 
+/** İptal mesajı (randevu CANCELLED yapılınca müşteriye gönderilir). */
+export function cancellationMessage(ctx: WhatsAppContext): string {
+  const brand = ctx.brand || 'Endamsince1979';
+  const branchLine = ctx.branchName ? `📍 ${ctx.branchName}` : '';
+  return (
+    `Değerli Müşterimiz ${ctx.customerName},\n\n` +
+    `${formatDateTr(ctx.date)} tarihindeki saat ${ctx.time} randevunuz iptal edilmiştir. 🙏\n` +
+    (branchLine ? `${branchLine}\n` : '') + `\n` +
+    `Yaşanan aksaklık için özür dileriz. Yeni bir randevu için bizi arayabilir veya web sitemiz üzerinden tekrar randevu oluşturabilirsiniz.\n\n` +
+    `Anlayışınız için teşekkür ederiz.\n— ${brand}`
+  );
+}
+
 /** Reddetme mesajı (opsiyonel). */
 export function rejectionMessage(ctx: WhatsAppContext): string {
   const brand = ctx.brand || 'Endamsince1979';

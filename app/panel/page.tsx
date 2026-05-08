@@ -5,6 +5,7 @@ import PushSubscribeButton from '@/components/PushSubscribeButton';
 import {
   approvalMessage,
   reminderMessage,
+  cancellationMessage,
   buildWhatsAppUrl,
   hoursUntil,
 } from '@/lib/whatsapp';
@@ -83,6 +84,7 @@ export default function Panel() {
   const [filter, setFilter] = useState<Filter>('pending');
   const [refreshing, setRefreshing] = useState(false);
   const [now, setNow] = useState<Date>(() => new Date());
+  const [showAddModal, setShowAddModal] = useState(false);
 
   /* ── Personel listesi ── */
   useEffect(() => {
@@ -348,6 +350,14 @@ export default function Panel() {
       <div className="panel-container">
         <PushSubscribeButton personnelId={selectedPersonnel} />
 
+        <button
+          type="button"
+          className="panel-add-btn"
+          onClick={() => setShowAddModal(true)}
+        >
+          <span aria-hidden>＋</span> Telefonla Randevu Ekle
+        </button>
+
         <section className="stat-grid">
           <StatCard label="Bugün" value={stats.today} accent="orange" icon="📅" />
           <StatCard label="Bekleyen" value={stats.pending} accent="amber" icon="⏳" highlight />
@@ -395,6 +405,181 @@ export default function Panel() {
             ))}
           </ul>
         )}
+      </div>
+
+      {showAddModal && (
+        <AddAppointmentModal
+          personnelId={selectedPersonnel}
+          onClose={() => setShowAddModal(false)}
+          onCreated={() => {
+            setShowAddModal(false);
+            fetchAppointments(selectedPersonnel, true);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ────────── MANUEL RANDEVU MODAL'I ────────── */
+
+function AddAppointmentModal({
+  personnelId, onClose, onCreated,
+}: {
+  personnelId: string;
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('0');
+  const [date, setDate] = useState(todayISO());
+  const [time, setTime] = useState('');
+  const [allSlots, setAllSlots] = useState<string[]>([]);
+  const [taken, setTaken] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [err, setErr] = useState('');
+
+  useEffect(() => {
+    fetch('/api/time-slots')
+      .then((r) => r.json())
+      .then((d) => setAllSlots(Array.isArray(d?.slots) ? d.slots : []))
+      .catch(() => setAllSlots([]))
+      .finally(() => setLoadingSlots(false));
+  }, []);
+
+  useEffect(() => {
+    if (!date || !personnelId) { setTaken([]); return; }
+    fetch(`/api/appointments?personnelId=${personnelId}&date=${date}`)
+      .then((r) => r.json())
+      .then((d) => setTaken(Array.isArray(d?.takenTimes) ? d.takenTimes : []))
+      .catch(() => setTaken([]));
+    setTime('');
+  }, [date, personnelId]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || phone.length < 11 || !date || !time) return;
+    setSubmitting(true);
+    setErr('');
+    try {
+      const res = await fetch('/api/panel/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          personnelId,
+          customerName: name.trim(),
+          customerPhone: phone.trim(),
+          date,
+          time,
+        }),
+      });
+      if (res.ok) {
+        onCreated();
+      } else if (res.status === 409) {
+        setErr('Bu saat zaten dolu. Lütfen başka bir saat seçin.');
+        // taken'ı tazele
+        fetch(`/api/appointments?personnelId=${personnelId}&date=${date}`)
+          .then((r) => r.json())
+          .then((d) => setTaken(Array.isArray(d?.takenTimes) ? d.takenTimes : []));
+        setTime('');
+      } else {
+        setErr('Randevu kaydedilemedi.');
+      }
+    } catch {
+      setErr('Bağlantı hatası.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="panel-modal-backdrop" onClick={onClose}>
+      <div className="panel-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="panel-modal-head">
+          <h3>Telefonla Randevu Ekle</h3>
+          <button className="panel-modal-close" onClick={onClose} aria-label="Kapat">✕</button>
+        </div>
+        <form className="panel-modal-form" onSubmit={handleSubmit}>
+          <label>
+            <span>Müşteri Adı</span>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ad Soyad"
+              autoFocus
+              required
+            />
+          </label>
+          <label>
+            <span>Telefon</span>
+            <input
+              type="tel"
+              inputMode="numeric"
+              value={phone}
+              onChange={(e) => {
+                const v = e.target.value;
+                const rest = v.startsWith('0') ? v.slice(1) : v;
+                const digits = rest.replace(/\D/g, '').slice(0, 10);
+                setPhone('0' + digits);
+              }}
+              placeholder="0 5XX XXX XX XX"
+              required
+            />
+          </label>
+          <label>
+            <span>Tarih</span>
+            <input
+              type="date"
+              value={date}
+              min={todayISO()}
+              onChange={(e) => setDate(e.target.value)}
+              required
+            />
+          </label>
+          <div className="panel-modal-slots">
+            <span className="panel-modal-slots-label">Saat</span>
+            {loadingSlots ? (
+              <div className="panel-modal-empty">Saatler yükleniyor…</div>
+            ) : allSlots.length === 0 ? (
+              <div className="panel-modal-empty">Tanımlı saat yok.</div>
+            ) : (
+              <div className="panel-modal-slot-grid">
+                {allSlots.map((s) => {
+                  const isTaken = taken.includes(s);
+                  const isActive = time === s;
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      className={`panel-modal-slot ${isActive ? 'active' : ''} ${isTaken ? 'taken' : ''}`}
+                      disabled={isTaken}
+                      onClick={() => setTime(s)}
+                    >
+                      {s}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {err && <p className="panel-modal-err">{err}</p>}
+
+          <div className="panel-modal-actions">
+            <button type="button" className="panel-modal-btn ghost" onClick={onClose}>
+              Vazgeç
+            </button>
+            <button
+              type="submit"
+              className="panel-modal-btn primary"
+              disabled={submitting || !name.trim() || phone.length < 11 || !date || !time}
+            >
+              {submitting ? 'Kaydediliyor…' : 'Kaydet'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
@@ -447,6 +632,8 @@ function AppointmentCard({
   const handleCancel = () => {
     if (confirm(`${appt.customerName} - ${formatDate(appt.date)} ${appt.time} randevusunu iptal etmek istediğinize emin misiniz?`)) {
       onUpdate(appt.id, 'CANCELLED');
+      const url = buildWhatsAppUrl(appt.customerPhone, cancellationMessage(ctx));
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
   };
 
