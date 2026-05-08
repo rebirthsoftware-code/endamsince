@@ -36,6 +36,9 @@ type Appointment = {
 };
 type Filter = 'all' | 'pending' | 'today' | 'week' | 'approved';
 
+/** Panel'den manuel saat bloku için kullanılan placeholder müşteri adı. */
+const MANUAL_BLOCK_NAME = 'Manuel Blok';
+
 const STATUS_LABEL: Record<Appointment['status'], string> = {
   PENDING: 'Bekliyor',
   APPROVED: 'Onaylandı',
@@ -251,15 +254,21 @@ export default function Panel() {
     }
   };
 
+  /* ── Manuel bloklar gerçek randevu listesinden hariç tutulur ── */
+  const realAppointments = useMemo(
+    () => appointments.filter((a) => a.customerName !== MANUAL_BLOCK_NAME),
+    [appointments]
+  );
+
   /* ── Filtrelenmiş + sıralı liste ── */
   const filtered = useMemo(() => {
     const tk = todayISO();
-    let list = appointments;
+    let list = realAppointments;
     switch (filter) {
-      case 'pending':  list = appointments.filter((a) => a.status === 'PENDING'); break;
-      case 'today':    list = appointments.filter((a) => a.date === tk); break;
-      case 'week':     list = appointments.filter((a) => within7Days(a.date)); break;
-      case 'approved': list = appointments.filter((a) => a.status === 'APPROVED'); break;
+      case 'pending':  list = realAppointments.filter((a) => a.status === 'PENDING'); break;
+      case 'today':    list = realAppointments.filter((a) => a.date === tk); break;
+      case 'week':     list = realAppointments.filter((a) => within7Days(a.date)); break;
+      case 'approved': list = realAppointments.filter((a) => a.status === 'APPROVED'); break;
       default: break;
     }
     return [...list].sort((a, b) => {
@@ -272,18 +281,18 @@ export default function Panel() {
       const bd = b.date + ' ' + b.time;
       return ad.localeCompare(bd);
     });
-  }, [appointments, filter]);
+  }, [realAppointments, filter]);
 
   /* ── İstatistikler ── */
   const stats = useMemo(() => {
     const tk = todayISO();
     return {
-      today:    appointments.filter((a) => a.date === tk).length,
-      pending:  appointments.filter((a) => a.status === 'PENDING').length,
-      approved: appointments.filter((a) => a.status === 'APPROVED').length,
-      rejected: appointments.filter((a) => a.status === 'REJECTED').length,
+      today:    realAppointments.filter((a) => a.date === tk).length,
+      pending:  realAppointments.filter((a) => a.status === 'PENDING').length,
+      approved: realAppointments.filter((a) => a.status === 'APPROVED').length,
+      rejected: realAppointments.filter((a) => a.status === 'REJECTED').length,
     };
-  }, [appointments]);
+  }, [realAppointments]);
 
   /* ──────────────────── RENDER ──────────────────── */
 
@@ -355,7 +364,7 @@ export default function Panel() {
           className="panel-add-btn"
           onClick={() => setShowAddModal(true)}
         >
-          <span aria-hidden>＋</span> Telefonla Randevu Ekle
+          <span aria-hidden>🕒</span> Saat Bloklama
         </button>
 
         <section className="stat-grid">
@@ -370,9 +379,9 @@ export default function Panel() {
           {([
             { id: 'pending', label: 'Bekleyen', count: stats.pending },
             { id: 'today',   label: 'Bugün',    count: stats.today },
-            { id: 'week',    label: 'Bu Hafta', count: appointments.filter((a) => within7Days(a.date)).length },
+            { id: 'week',    label: 'Bu Hafta', count: realAppointments.filter((a) => within7Days(a.date)).length },
             { id: 'approved',label: 'Onaylı',   count: stats.approved },
-            { id: 'all',     label: 'Tümü',     count: appointments.length },
+            { id: 'all',     label: 'Tümü',     count: realAppointments.length },
           ] as { id: Filter; label: string; count: number }[]).map((f) => (
             <button
               key={f.id}
@@ -408,36 +417,33 @@ export default function Panel() {
       </div>
 
       {showAddModal && (
-        <AddAppointmentModal
+        <BlockSlotsModal
           personnelId={selectedPersonnel}
+          appointments={appointments}
           onClose={() => setShowAddModal(false)}
-          onCreated={() => {
-            setShowAddModal(false);
-            fetchAppointments(selectedPersonnel, true);
-          }}
+          onChanged={() => fetchAppointments(selectedPersonnel, true)}
         />
       )}
     </div>
   );
 }
 
-/* ────────── MANUEL RANDEVU MODAL'I ────────── */
+/* ────────── SAAT BLOKLAMA MODAL'I ────────── */
+/** Detay tutmadan saat dilimini doluya alır. Tıkla → blokla, tekrar tıkla → aç.
+ *  Gerçek müşteri randevuları kilitli (yanlışlıkla silinmesin). */
 
-function AddAppointmentModal({
-  personnelId, onClose, onCreated,
+function BlockSlotsModal({
+  personnelId, appointments, onClose, onChanged,
 }: {
   personnelId: string;
+  appointments: Appointment[];
   onClose: () => void;
-  onCreated: () => void;
+  onChanged: () => void;
 }) {
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('0');
   const [date, setDate] = useState(todayISO());
-  const [time, setTime] = useState('');
   const [allSlots, setAllSlots] = useState<string[]>([]);
-  const [taken, setTaken] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [busyTime, setBusyTime] = useState<string>(''); // o an işlem yapılan saat
   const [err, setErr] = useState('');
 
   useEffect(() => {
@@ -448,48 +454,55 @@ function AddAppointmentModal({
       .finally(() => setLoadingSlots(false));
   }, []);
 
-  useEffect(() => {
-    if (!date || !personnelId) { setTaken([]); return; }
-    fetch(`/api/appointments?personnelId=${personnelId}&date=${date}`)
-      .then((r) => r.json())
-      .then((d) => setTaken(Array.isArray(d?.takenTimes) ? d.takenTimes : []))
-      .catch(() => setTaken([]));
-    setTime('');
-  }, [date, personnelId]);
+  // O tarihteki aktif kayıtları map'le: time → appointment
+  const slotState = useMemo(() => {
+    const map = new Map<string, Appointment>();
+    for (const a of appointments) {
+      if (a.date !== date) continue;
+      if (a.status !== 'PENDING' && a.status !== 'APPROVED') continue;
+      map.set(a.time, a);
+    }
+    return map;
+  }, [appointments, date]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || phone.length < 11 || !date || !time) return;
-    setSubmitting(true);
+  const blockSlot = async (time: string) => {
     setErr('');
+    setBusyTime(time);
     try {
       const res = await fetch('/api/panel/appointments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          personnelId,
-          customerName: name.trim(),
-          customerPhone: phone.trim(),
-          date,
-          time,
-        }),
+        body: JSON.stringify({ personnelId, date, time }),
       });
       if (res.ok) {
-        onCreated();
+        onChanged();
       } else if (res.status === 409) {
-        setErr('Bu saat zaten dolu. Lütfen başka bir saat seçin.');
-        // taken'ı tazele
-        fetch(`/api/appointments?personnelId=${personnelId}&date=${date}`)
-          .then((r) => r.json())
-          .then((d) => setTaken(Array.isArray(d?.takenTimes) ? d.takenTimes : []));
-        setTime('');
+        setErr('Bu saat zaten dolu.');
+        onChanged();
       } else {
-        setErr('Randevu kaydedilemedi.');
+        setErr('Saat bloklanamadı.');
       }
     } catch {
       setErr('Bağlantı hatası.');
     } finally {
-      setSubmitting(false);
+      setBusyTime('');
+    }
+  };
+
+  const unblockSlot = async (id: string, time: string) => {
+    setErr('');
+    setBusyTime(time);
+    try {
+      const res = await fetch(`/api/panel/appointments/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        onChanged();
+      } else {
+        setErr('Saat açılamadı.');
+      }
+    } catch {
+      setErr('Bağlantı hatası.');
+    } finally {
+      setBusyTime('');
     }
   };
 
@@ -497,37 +510,10 @@ function AddAppointmentModal({
     <div className="panel-modal-backdrop" onClick={onClose}>
       <div className="panel-modal" onClick={(e) => e.stopPropagation()}>
         <div className="panel-modal-head">
-          <h3>Telefonla Randevu Ekle</h3>
+          <h3>Saat Bloklama</h3>
           <button className="panel-modal-close" onClick={onClose} aria-label="Kapat">✕</button>
         </div>
-        <form className="panel-modal-form" onSubmit={handleSubmit}>
-          <label>
-            <span>Müşteri Adı</span>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ad Soyad"
-              autoFocus
-              required
-            />
-          </label>
-          <label>
-            <span>Telefon</span>
-            <input
-              type="tel"
-              inputMode="numeric"
-              value={phone}
-              onChange={(e) => {
-                const v = e.target.value;
-                const rest = v.startsWith('0') ? v.slice(1) : v;
-                const digits = rest.replace(/\D/g, '').slice(0, 10);
-                setPhone('0' + digits);
-              }}
-              placeholder="0 5XX XXX XX XX"
-              required
-            />
-          </label>
+        <div className="panel-modal-form">
           <label>
             <span>Tarih</span>
             <input
@@ -535,11 +521,14 @@ function AddAppointmentModal({
               value={date}
               min={todayISO()}
               onChange={(e) => setDate(e.target.value)}
-              required
             />
           </label>
+
+          <p className="panel-modal-hint">
+            Boş saate tıkla → doluya al. Manuel bloku açmak için tekrar tıkla. 🔒 işaretli gerçek randevular değiştirilemez.
+          </p>
+
           <div className="panel-modal-slots">
-            <span className="panel-modal-slots-label">Saat</span>
             {loadingSlots ? (
               <div className="panel-modal-empty">Saatler yükleniyor…</div>
             ) : allSlots.length === 0 ? (
@@ -547,16 +536,35 @@ function AddAppointmentModal({
             ) : (
               <div className="panel-modal-slot-grid">
                 {allSlots.map((s) => {
-                  const isTaken = taken.includes(s);
-                  const isActive = time === s;
+                  const appt = slotState.get(s);
+                  const isManualBlock = appt?.customerName === MANUAL_BLOCK_NAME;
+                  const isRealBooking = !!appt && !isManualBlock;
+                  const isBusy = busyTime === s;
+
+                  let cls = 'panel-modal-slot';
+                  if (isRealBooking) cls += ' locked';
+                  else if (isManualBlock) cls += ' blocked';
+
                   return (
                     <button
                       key={s}
                       type="button"
-                      className={`panel-modal-slot ${isActive ? 'active' : ''} ${isTaken ? 'taken' : ''}`}
-                      disabled={isTaken}
-                      onClick={() => setTime(s)}
+                      className={cls}
+                      disabled={isRealBooking || isBusy}
+                      onClick={() => {
+                        if (isRealBooking) return;
+                        if (isManualBlock && appt) unblockSlot(appt.id, s);
+                        else blockSlot(s);
+                      }}
+                      title={
+                        isRealBooking
+                          ? `${appt?.customerName} — gerçek randevu, kilitli`
+                          : isManualBlock
+                          ? 'Manuel blok — tıkla, açılsın'
+                          : 'Boş — tıkla, blokla'
+                      }
                     >
+                      {isRealBooking && <span className="slot-icon" aria-hidden>🔒</span>}
                       {s}
                     </button>
                   );
@@ -568,18 +576,11 @@ function AddAppointmentModal({
           {err && <p className="panel-modal-err">{err}</p>}
 
           <div className="panel-modal-actions">
-            <button type="button" className="panel-modal-btn ghost" onClick={onClose}>
-              Vazgeç
-            </button>
-            <button
-              type="submit"
-              className="panel-modal-btn primary"
-              disabled={submitting || !name.trim() || phone.length < 11 || !date || !time}
-            >
-              {submitting ? 'Kaydediliyor…' : 'Kaydet'}
+            <button type="button" className="panel-modal-btn primary" onClick={onClose}>
+              Tamam
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

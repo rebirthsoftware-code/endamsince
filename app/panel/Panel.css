@@ -1086,6 +1086,40 @@
   cursor: not-allowed;
   text-decoration: line-through;
 }
+/* Manuel blok (panelden işaretlenmiş, açılabilir) */
+.panel-modal-slot.blocked {
+  background: var(--p-orange);
+  border-color: var(--p-orange);
+  color: #fff;
+  position: relative;
+}
+.panel-modal-slot.blocked:hover:not(:disabled) {
+  background: #d44e15;
+  border-color: #d44e15;
+  color: #fff;
+}
+/* Gerçek müşteri randevusu — kilitli, dokunulamaz */
+.panel-modal-slot.locked {
+  background: #2a2a2a;
+  border-color: #2a2a2a;
+  color: #fff;
+  cursor: not-allowed;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+.panel-modal-slot .slot-icon {
+  font-size: 0.78rem;
+  line-height: 1;
+}
+
+.panel-modal-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--p-text-muted);
+  line-height: 1.45;
+}
 .panel-modal-empty {
   font-size: 0.85rem;
   color: var(--p-text-muted);

@@ -26,16 +26,21 @@ export async function GET(request: Request) {
 }
 
 /**
- * Panel üzerinden manuel (telefonla aranarak verilen) randevu oluşturur.
- * Müşteri sitesi POST'undan farklı olarak: durum doğrudan APPROVED kaydedilir
- * (panel personeli zaten kabul etmiş demektir) ve push bildirimi atılmaz.
+ * Panel üzerinden manuel saat bloklama. Telefonla arayan müşteri için
+ * detay tutmadan sadece o saat dilimini doluya alır. customerName ve
+ * customerPhone "Manuel Blok" / "-" olarak işaretlenir; bu sayede
+ * gerçek müşteri randevularından ayırt edilebilir (gerçek randevular
+ * yanlışlıkla silinmesin diye). Status APPROVED, push gönderilmez.
  */
+const MANUAL_BLOCK_NAME = 'Manuel Blok';
+const MANUAL_BLOCK_PHONE = '-';
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { personnelId, customerName, customerPhone, date, time } = body;
+    const { personnelId, date, time } = body;
 
-    if (!personnelId || !customerName || !customerPhone || !date || !time) {
+    if (!personnelId || !date || !time) {
       return NextResponse.json({ error: 'Eksik alan' }, { status: 400 });
     }
 
@@ -57,8 +62,8 @@ export async function POST(request: Request) {
     const appointment = await prisma.appointment.create({
       data: {
         personnelId,
-        customerName,
-        customerPhone,
+        customerName: MANUAL_BLOCK_NAME,
+        customerPhone: MANUAL_BLOCK_PHONE,
         date,
         time,
         status: 'APPROVED',
@@ -68,6 +73,6 @@ export async function POST(request: Request) {
     return NextResponse.json(appointment, { status: 201 });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: 'Randevu oluşturulamadı' }, { status: 500 });
+    return NextResponse.json({ error: 'Saat bloklanamadı' }, { status: 500 });
   }
 }
