@@ -35,7 +35,7 @@ type Appointment = {
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
   createdAt?: string;
 };
-type Filter = 'all' | 'pending' | 'today' | 'week' | 'approved';
+type Filter = 'all' | 'pending' | 'today' | 'approved';
 
 /** Panel'den manuel saat bloku için kullanılan placeholder müşteri adı. */
 const MANUAL_BLOCK_NAME = 'Manuel Blok';
@@ -53,14 +53,6 @@ function todayISO(): string {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
-}
-
-function within7Days(dateStr: string): boolean {
-  const d = new Date(dateStr + 'T00:00:00');
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  const diff = (d.getTime() - now.getTime()) / 86400000;
-  return diff >= 0 && diff <= 6;
 }
 
 function formatDate(iso: string): string {
@@ -255,11 +247,13 @@ export default function Panel() {
     }
   };
 
-  /* ── Manuel bloklar gerçek randevu listesinden hariç tutulur ── */
-  const realAppointments = useMemo(
-    () => appointments.filter((a) => a.customerName !== MANUAL_BLOCK_NAME),
-    [appointments]
-  );
+  /* ── Manuel bloklar + geçmiş tarihli kayıtlar listeden hariç ── */
+  const realAppointments = useMemo(() => {
+    const tk = todayISO();
+    return appointments.filter(
+      (a) => a.customerName !== MANUAL_BLOCK_NAME && a.date >= tk
+    );
+  }, [appointments]);
 
   /* ── Filtrelenmiş + sıralı liste ── */
   const filtered = useMemo(() => {
@@ -268,7 +262,6 @@ export default function Panel() {
     switch (filter) {
       case 'pending':  list = realAppointments.filter((a) => a.status === 'PENDING'); break;
       case 'today':    list = realAppointments.filter((a) => a.date === tk); break;
-      case 'week':     list = realAppointments.filter((a) => within7Days(a.date)); break;
       case 'approved': list = realAppointments.filter((a) => a.status === 'APPROVED'); break;
       default: break;
     }
@@ -380,7 +373,6 @@ export default function Panel() {
           {([
             { id: 'pending', label: 'Bekleyen', count: stats.pending },
             { id: 'today',   label: 'Bugün',    count: stats.today },
-            { id: 'week',    label: 'Bu Hafta', count: realAppointments.filter((a) => within7Days(a.date)).length },
             { id: 'approved',label: 'Onaylı',   count: stats.approved },
             { id: 'all',     label: 'Tümü',     count: realAppointments.length },
           ] as { id: Filter; label: string; count: number }[]).map((f) => (
@@ -567,41 +559,53 @@ function BlockSlotsModal({
               <div className="panel-modal-empty">Tanımlı saat yok.</div>
             ) : (
               <div className="panel-modal-slot-grid">
-                {allSlots.map((s) => {
-                  const appt = slotState.get(s);
-                  const isManualBlock = appt?.customerName === MANUAL_BLOCK_NAME;
-                  const isRealBooking = !!appt && !isManualBlock;
-                  const isBusy = busyTime === s;
+                {(() => {
+                  const today = todayISO();
+                  const isToday = date === today;
+                  const t = new Date();
+                  const nowHM = isToday
+                    ? `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`
+                    : '';
+                  return allSlots.map((s) => {
+                    const appt = slotState.get(s);
+                    const isManualBlock = appt?.customerName === MANUAL_BLOCK_NAME;
+                    const isRealBooking = !!appt && !isManualBlock;
+                    const isPast = isToday && s <= nowHM;
+                    const isBusy = busyTime === s;
 
-                  let cls = 'panel-modal-slot';
-                  if (isRealBooking) cls += ' locked';
-                  else if (isManualBlock) cls += ' blocked';
+                    let cls = 'panel-modal-slot';
+                    if (isRealBooking) cls += ' locked';
+                    else if (isManualBlock) cls += ' blocked';
+                    if (isPast) cls += ' past';
 
-                  return (
-                    <button
-                      key={s}
-                      type="button"
-                      className={cls}
-                      disabled={isRealBooking || isBusy}
-                      onClick={() => {
-                        if (isRealBooking) return;
-                        if (isManualBlock && appt) unblockSlot(appt.id, s);
-                        else blockSlot(s);
-                      }}
-                      title={
-                        isRealBooking
-                          ? `${appt?.customerName} — gerçek randevu, kilitli`
-                          : isManualBlock
-                          ? 'Manuel blok — tıkla, kaldır'
-                          : 'Boş — tıkla, blokla'
-                      }
-                    >
-                      {isRealBooking && <span className="slot-icon" aria-hidden>🔒</span>}
-                      <span>{s}</span>
-                      {isManualBlock && <span className="slot-remove" aria-hidden>✕</span>}
-                    </button>
-                  );
-                })}
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        className={cls}
+                        disabled={isRealBooking || isBusy || isPast}
+                        onClick={() => {
+                          if (isRealBooking || isPast) return;
+                          if (isManualBlock && appt) unblockSlot(appt.id, s);
+                          else blockSlot(s);
+                        }}
+                        title={
+                          isPast
+                            ? 'Geçmiş saat'
+                            : isRealBooking
+                            ? `${appt?.customerName} — gerçek randevu, kilitli`
+                            : isManualBlock
+                            ? 'Manuel blok — tıkla, kaldır'
+                            : 'Boş — tıkla, blokla'
+                        }
+                      >
+                        {isRealBooking && <span className="slot-icon" aria-hidden>🔒</span>}
+                        <span>{s}</span>
+                        {isManualBlock && !isPast && <span className="slot-remove" aria-hidden>✕</span>}
+                      </button>
+                    );
+                  });
+                })()}
               </div>
             )}
           </div>
@@ -773,7 +777,6 @@ function EmptyState({ filter }: { filter: Filter }) {
   const messages: Record<Filter, { icon: string; title: string; desc: string }> = {
     pending:  { icon: '✓', title: 'Tüm randevular onaylanmış', desc: 'Şu anda bekleyen yeni randevu yok.' },
     today:    { icon: '☕', title: 'Bugün için randevu yok', desc: 'Hayırlı bir gün geçirin.' },
-    week:     { icon: '📅', title: 'Bu hafta randevu yok', desc: 'Önümüzdeki günler boş görünüyor.' },
     approved: { icon: '⭐', title: 'Onaylı randevu yok', desc: 'Henüz onayladığınız bir randevu bulunmuyor.' },
     all:      { icon: '📋', title: 'Henüz randevu yok', desc: 'Yeni randevular geldiğinde burada listelenecek.' },
   };

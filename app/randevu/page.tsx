@@ -193,30 +193,41 @@ function RandevuContent() {
                 <p className="text-secondary text-sm">Saatler yükleniyor…</p>
               ) : allSlots.length === 0 ? (
                 <p className="text-secondary text-sm">Şu anda uygun saat yok. Lütfen daha sonra tekrar deneyin.</p>
-              ) : (
+              ) : (() => {
+                // Bugün için geçmiş saatler seçilemez
+                const today = new Date();
+                const isToday = date === today.toISOString().split('T')[0];
+                const nowHM = isToday
+                  ? `${String(today.getHours()).padStart(2, '0')}:${String(today.getMinutes()).padStart(2, '0')}`
+                  : '';
+                return (
                 <div className="time-slot-grid">
                   {allSlots.map(slot => {
                     const isTaken = takenTimes.includes(slot);
+                    const isPast = isToday && slot <= nowHM;
                     const isSelected = time === slot;
+                    const disabled = isTaken || isPast;
                     return (
                       <button
                         type="button"
                         key={slot}
-                        disabled={isTaken}
+                        disabled={disabled}
                         onClick={() => {
-                          if (isTaken) return;
+                          if (disabled) return;
                           setTime(slot);
                           setStep(4);
                         }}
-                        className={`time-slot ${isSelected ? 'selected' : ''} ${isTaken ? 'taken' : ''}`}
+                        className={`time-slot ${isSelected ? 'selected' : ''} ${isTaken ? 'taken' : ''} ${isPast ? 'past' : ''}`}
                       >
                         <span className="time-slot-hr">{slot}</span>
-                        {isTaken && <span className="time-slot-badge">Dolu</span>}
+                        {isTaken && !isPast && <span className="time-slot-badge">Dolu</span>}
+                        {isPast && <span className="time-slot-badge">Geçti</span>}
                       </button>
                     );
                   })}
                 </div>
-              )}
+                );
+              })()}
             </div>
             <div className="flex-between mt-8 gap-4">
               <button className="btn btn-outline" onClick={prevStep}>Geri</button>

@@ -233,6 +233,16 @@
   opacity: 0.9;
 }
 .time-slot.taken:hover { transform: none; }
+.time-slot.past {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+  text-decoration: line-through;
+  text-decoration-color: rgba(156, 163, 175, 0.6);
+  box-shadow: none;
+}
+.time-slot.past:hover { transform: none; }
 .time-slot-hr { font-weight: 700; letter-spacing: 0.04em; font-size: 1.05rem; }
 .time-slot-badge {
   font-size: 0.6rem;
