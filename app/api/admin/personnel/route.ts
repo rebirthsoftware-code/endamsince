@@ -31,6 +31,15 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+    // Pzt..Cmt × varsayılan saatler
+    const slotData = [1, 2, 3, 4, 5, 6].flatMap((day) =>
+      DEFAULT_SLOTS.map((time, i) => ({
+        time,
+        dayOfWeek: day,
+        order: i + 1,
+        active: true,
+      }))
+    );
     const created = await prisma.personnel.create({
       data: {
         name,
@@ -38,13 +47,7 @@ export async function POST(request: Request) {
         image: image || null,
         pinCode,
         branchId,
-        timeSlots: {
-          create: DEFAULT_SLOTS.map((time, i) => ({
-            time,
-            order: i + 1,
-            active: true,
-          })),
-        },
+        timeSlots: { create: slotData },
       },
     });
     return NextResponse.json(created, { status: 201 });

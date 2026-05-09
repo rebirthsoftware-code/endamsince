@@ -272,15 +272,18 @@ async function main() {
 
   await seedIfEmpty('TimeSlot', () => prisma.timeSlot.count(), async () => {
     const slots = ['09:00','10:00','11:00','13:00','14:00','15:00','16:00','17:00'];
+    const days = [1, 2, 3, 4, 5, 6]; // Pzt..Cmt
     const allPersonnel = await prisma.personnel.findMany({ select: { id: true } });
     const created: unknown[] = [];
     for (const p of allPersonnel) {
-      for (let i = 0; i < slots.length; i++) {
-        created.push(
-          await prisma.timeSlot.create({
-            data: { time: slots[i], order: i + 1, personnelId: p.id },
-          })
-        );
+      for (const d of days) {
+        for (let i = 0; i < slots.length; i++) {
+          created.push(
+            await prisma.timeSlot.create({
+              data: { time: slots[i], dayOfWeek: d, order: i + 1, personnelId: p.id },
+            })
+          );
+        }
       }
     }
     return created;

@@ -46,14 +46,15 @@ model GalleryItem {
 model TimeSlot {
   id          String    @id @default(cuid())
   time        String
+  dayOfWeek   Int       // 1=Mon..6=Sat (Sunday closed)
   order       Int       @default(0)
   active      Boolean   @default(true)
   personnelId String
   personnel   Personnel @relation(fields: [personnelId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
 
-  @@unique([personnelId, time])
-  @@index([personnelId, active, order])
+  @@unique([personnelId, dayOfWeek, time])
+  @@index([personnelId, dayOfWeek, active, order])
 }
 
 model Service {

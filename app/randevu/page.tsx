@@ -24,6 +24,7 @@ function RandevuContent() {
   const [submitError, setSubmitError] = useState<string>('');
   const [allSlots, setAllSlots] = useState<string[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(true);
+  const [closedReason, setClosedReason] = useState<string>('');
 
   useEffect(() => {
     fetch('/api/branches')
@@ -32,22 +33,29 @@ function RandevuContent() {
       .catch(err => console.error(err));
   }, []);
 
-  /* ── Seçili personelin saat slotlarını çek ── */
+  /* ── Seçili personel + tarih için saat slotlarını çek ── */
   useEffect(() => {
-    if (!selectedPersonnel) {
+    if (!selectedPersonnel || !date) {
       setAllSlots([]);
+      setClosedReason('');
       setSlotsLoading(false);
       return;
     }
     setSlotsLoading(true);
-    fetch(`/api/time-slots?personnelId=${encodeURIComponent(selectedPersonnel)}`)
+    fetch(
+      `/api/time-slots?personnelId=${encodeURIComponent(selectedPersonnel)}&date=${encodeURIComponent(date)}`
+    )
       .then(res => res.json())
       .then(data => {
         setAllSlots(Array.isArray(data?.slots) ? data.slots : []);
+        setClosedReason(data?.closed ? (data?.reason || 'Bu gün kapalı.') : '');
       })
-      .catch(() => setAllSlots([]))
+      .catch(() => {
+        setAllSlots([]);
+        setClosedReason('');
+      })
       .finally(() => setSlotsLoading(false));
-  }, [selectedPersonnel]);
+  }, [selectedPersonnel, date]);
 
   useEffect(() => {
     if (selectedBranch) {
@@ -198,8 +206,10 @@ function RandevuContent() {
                 <p className="text-secondary text-sm">Önce bir tarih seçin.</p>
               ) : slotsLoading ? (
                 <p className="text-secondary text-sm">Saatler yükleniyor…</p>
+              ) : closedReason ? (
+                <p className="text-secondary text-sm">{closedReason}</p>
               ) : allSlots.length === 0 ? (
-                <p className="text-secondary text-sm">Şu anda uygun saat yok. Lütfen daha sonra tekrar deneyin.</p>
+                <p className="text-secondary text-sm">Bu gün için uygun saat yok. Lütfen başka bir gün seçin.</p>
               ) : (() => {
                 // Bugün için geçmiş saatler seçilemez
                 const today = new Date();

@@ -35,6 +35,18 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { personnelId, customerName, customerPhone, date, time } = body;
 
+    // Pazar günü kapalı
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(date || ''));
+    if (m) {
+      const dUtc = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+      if (dUtc.getUTCDay() === 0) {
+        return NextResponse.json(
+          { error: 'Pazar günü kapalıyız. Lütfen başka bir gün seçin.' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Çift rezervasyon önleme
     const existing = await prisma.appointment.findFirst({
       where: {

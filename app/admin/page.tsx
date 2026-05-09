@@ -41,9 +41,19 @@ type Tab =
 type TimeSlot = {
   id: string;
   time: string;
+  dayOfWeek: number;
   order: number;
   active: boolean;
 };
+
+const DAY_LABELS: { value: number; label: string }[] = [
+  { value: 1, label: 'Pzt' },
+  { value: 2, label: 'Sal' },
+  { value: 3, label: 'Çar' },
+  { value: 4, label: 'Per' },
+  { value: 5, label: 'Cum' },
+  { value: 6, label: 'Cmt' },
+];
 
 type GalleryItem = {
   id: string;
@@ -926,6 +936,7 @@ function SlotsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', 
   const [adding, setAdding] = useState(false);
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
   const [selectedPersonnel, setSelectedPersonnel] = useState<string>('');
+  const [selectedDay, setSelectedDay] = useState<number>(1);
 
   // Personel listesini çek
   useEffect(() => {
@@ -946,14 +957,14 @@ function SlotsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', 
     setLoading(true);
     try {
       const res = await adminFetch(
-        `/api/admin/time-slots?personnelId=${encodeURIComponent(selectedPersonnel)}`,
+        `/api/admin/time-slots?personnelId=${encodeURIComponent(selectedPersonnel)}&dayOfWeek=${selectedDay}`,
         { headers: authHeaders(pin) }
       );
       if (res.ok) setList(await res.json());
     } finally {
       setLoading(false);
     }
-  }, [pin, selectedPersonnel]);
+  }, [pin, selectedPersonnel, selectedDay]);
   useEffect(() => { load(); }, [load]);
 
   const addSlot = async (e: React.FormEvent) => {
@@ -967,7 +978,12 @@ function SlotsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', 
       const res = await adminFetch('/api/admin/time-slots', {
         method: 'POST',
         headers: authHeaders(pin),
-        body: JSON.stringify({ time: newTime, order, personnelId: selectedPersonnel }),
+        body: JSON.stringify({
+          time: newTime,
+          order,
+          personnelId: selectedPersonnel,
+          dayOfWeek: selectedDay,
+        }),
       });
       if (res.ok) {
         showToast('ok', 'Saat eklendi');
@@ -1018,7 +1034,7 @@ function SlotsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', 
       <div className="admin-section-head">
         <div>
           <h2>Randevu Saatleri</h2>
-          <p>Her personel için ayrı saatler tanımlayın. Müşteriler personel seçince yalnızca o personelin saatlerini görür.</p>
+          <p>Her personel + her gün için ayrı saatler tanımlayın. Pazar günü kapalıdır.</p>
         </div>
       </div>
 
@@ -1040,6 +1056,20 @@ function SlotsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', 
             </option>
           ))}
         </select>
+      </div>
+
+      <div className="slots-day-tabs" style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+        {DAY_LABELS.map((d) => (
+          <button
+            key={d.value}
+            type="button"
+            onClick={() => setSelectedDay(d.value)}
+            className={selectedDay === d.value ? 'admin-btn-primary' : 'admin-btn-ghost'}
+            style={{ minWidth: 64 }}
+          >
+            {d.label}
+          </button>
+        ))}
       </div>
 
       <form className="slots-add" onSubmit={addSlot}>
