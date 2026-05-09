@@ -1,16 +1,28 @@
-// Idempotent migration: TimeSlot global → personel başına.
-// Eski global saatleri her personel için kopyalar. Randevular etkilenmez.
+// Idempotent migration + self-healing backfill.
+// 1) TimeSlot global → personel başına şema dönüşümü (bir kerelik, tekrar tekrar güvenli)
+// 2) Saati olmayan her personel için varsayılan saatleri ekler (her build'de güvenli)
+// Randevular hiçbir zaman etkilenmez.
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-async function main() {
+const DEFAULT_SLOTS = (() => {
+  const out = [];
+  for (let h = 9; h < 20; h++) {
+    out.push(`${String(h).padStart(2, '0')}:00`);
+    out.push(`${String(h).padStart(2, '0')}:30`);
+  }
+  out.push('20:00');
+  return out;
+})();
+
+async function migrateSchemaIfNeeded() {
   const tables = await prisma.$queryRaw`
     SELECT table_name FROM information_schema.tables
     WHERE table_schema = 'public' AND table_name = 'TimeSlot'
   `;
   if (tables.length === 0) {
-    console.log('[migrate-timeslots] TimeSlot tablosu yok, ilk kurulum — atlanıyor.');
+    console.log('[migrate-timeslots] TimeSlot tablosu yok, ilk kurulum — şema atlandı.');
     return;
   }
 
@@ -19,11 +31,11 @@ async function main() {
     WHERE table_schema = 'public' AND table_name = 'TimeSlot' AND column_name = 'personnelId'
   `;
   if (cols.length > 0) {
-    console.log('[migrate-timeslots] zaten yapılmış — atlanıyor.');
+    console.log('[migrate-timeslots] şema dönüşümü zaten yapılmış.');
     return;
   }
 
-  console.log('[migrate-timeslots] başlıyor…');
+  console.log('[migrate-timeslots] şema dönüşümü başlıyor…');
 
   const oldSlots = await prisma.$queryRawUnsafe(
     `SELECT time, "order", active FROM "TimeSlot"`
@@ -53,17 +65,68 @@ async function main() {
 
   for (const p of personnel) {
     for (const s of oldSlots) {
-      await prisma.timeSlot.create({
-        data: {
-          time: s.time,
-          order: s.order ?? 0,
-          active: s.active ?? true,
-          personnelId: p.id,
-        },
-      });
+      try {
+        await prisma.timeSlot.create({
+          data: {
+            time: s.time,
+            order: s.order ?? 0,
+            active: s.active ?? true,
+            personnelId: p.id,
+          },
+        });
+      } catch (e) {
+        console.warn('[migrate-timeslots] insert atlandı', s.time, e?.message);
+      }
     }
   }
-  console.log('[migrate-timeslots] tamam.');
+  console.log('[migrate-timeslots] şema dönüşümü tamam.');
+}
+
+async function backfillEmptyPersonnel() {
+  // Hiç saati olmayan personeli bul, varsayılan saatleri ekle.
+  const empty = await prisma.$queryRawUnsafe(`
+    SELECT p.id FROM "Personnel" p
+    LEFT JOIN "TimeSlot" ts ON ts."personnelId" = p.id
+    GROUP BY p.id
+    HAVING COUNT(ts.id) = 0
+  `);
+  if (empty.length === 0) {
+    console.log('[migrate-timeslots] backfill: tüm personelin saati var.');
+    return;
+  }
+  console.log(`[migrate-timeslots] backfill: ${empty.length} personele varsayılan saat ekleniyor…`);
+  for (const p of empty) {
+    for (let i = 0; i < DEFAULT_SLOTS.length; i++) {
+      try {
+        await prisma.timeSlot.create({
+          data: {
+            time: DEFAULT_SLOTS[i],
+            order: i + 1,
+            active: true,
+            personnelId: p.id,
+          },
+        });
+      } catch (e) {
+        // unique violation = zaten var, atla
+        if (!String(e?.message || '').includes('Unique')) {
+          console.warn('[migrate-timeslots] backfill insert hata', DEFAULT_SLOTS[i], e?.message);
+        }
+      }
+    }
+  }
+  console.log('[migrate-timeslots] backfill tamam.');
+}
+
+async function main() {
+  await migrateSchemaIfNeeded();
+  // Backfill yalnızca yeni şema yerleştiyse mantıklı
+  const cols = await prisma.$queryRaw`
+    SELECT column_name FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'TimeSlot' AND column_name = 'personnelId'
+  `;
+  if (cols.length > 0) {
+    await backfillEmptyPersonnel();
+  }
 }
 
 main()
