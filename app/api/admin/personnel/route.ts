@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { requireAdmin } from '@/lib/admin-auth';
+import { DEFAULT_SLOTS } from '@/lib/default-slots';
 
 
 export const dynamic = 'force-dynamic';
@@ -37,6 +38,13 @@ export async function POST(request: Request) {
         image: image || null,
         pinCode,
         branchId,
+        timeSlots: {
+          create: DEFAULT_SLOTS.map((time, i) => ({
+            time,
+            order: i + 1,
+            active: true,
+          })),
+        },
       },
     });
     return NextResponse.json(created, { status: 201 });

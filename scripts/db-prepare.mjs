@@ -16,6 +16,16 @@ if (!process.env.DATABASE_URL && process.env.POSTGRES_PRISMA_URL) {
 }
 
 try {
+  console.log('[db-prepare] timeslots → personnel migration…');
+  execSync('node scripts/migrate-timeslots-personnel.mjs', {
+    stdio: 'inherit',
+    env: process.env,
+  });
+} catch (err) {
+  console.error('[db-prepare] timeslots migration hatası — devam ediyor.', err?.message || err);
+}
+
+try {
   console.log('[db-prepare] prisma db push…');
   execSync('npx prisma db push --accept-data-loss --skip-generate', {
     stdio: 'inherit',

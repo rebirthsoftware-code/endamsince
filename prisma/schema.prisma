@@ -26,6 +26,7 @@ model Personnel {
   branch        Branch             @relation(fields: [branchId], references: [id])
   appointments  Appointment[]
   subscriptions PushSubscription[]
+  timeSlots     TimeSlot[]
 }
 
 model GalleryItem {
@@ -43,13 +44,16 @@ model GalleryItem {
 }
 
 model TimeSlot {
-  id        String   @id @default(cuid())
-  time      String   @unique
-  order     Int      @default(0)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
+  id          String    @id @default(cuid())
+  time        String
+  order       Int       @default(0)
+  active      Boolean   @default(true)
+  personnelId String
+  personnel   Personnel @relation(fields: [personnelId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
 
-  @@index([active, order])
+  @@unique([personnelId, time])
+  @@index([personnelId, active, order])
 }
 
 model Service {

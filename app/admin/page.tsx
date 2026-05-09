@@ -921,24 +921,44 @@ function BranchModal({
 
 function SlotsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', m: string) => void }) {
   const [list, setList] = useState<TimeSlot[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [newTime, setNewTime] = useState('');
   const [adding, setAdding] = useState(false);
+  const [personnel, setPersonnel] = useState<Personnel[]>([]);
+  const [selectedPersonnel, setSelectedPersonnel] = useState<string>('');
+
+  // Personel listesini çek
+  useEffect(() => {
+    adminFetch('/api/admin/personnel', { headers: authHeaders(pin) })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: Personnel[]) => {
+        setPersonnel(data);
+        if (data.length > 0) setSelectedPersonnel((prev) => prev || data[0].id);
+      })
+      .catch(() => setPersonnel([]));
+  }, [pin]);
 
   const load = useCallback(async () => {
+    if (!selectedPersonnel) {
+      setList([]);
+      return;
+    }
     setLoading(true);
     try {
-      const res = await adminFetch('/api/admin/time-slots', { headers: authHeaders(pin) });
+      const res = await adminFetch(
+        `/api/admin/time-slots?personnelId=${encodeURIComponent(selectedPersonnel)}`,
+        { headers: authHeaders(pin) }
+      );
       if (res.ok) setList(await res.json());
     } finally {
       setLoading(false);
     }
-  }, [pin]);
+  }, [pin, selectedPersonnel]);
   useEffect(() => { load(); }, [load]);
 
   const addSlot = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTime) return;
+    if (!newTime || !selectedPersonnel) return;
     setAdding(true);
     try {
       const order = list.length > 0
@@ -947,7 +967,7 @@ function SlotsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', 
       const res = await adminFetch('/api/admin/time-slots', {
         method: 'POST',
         headers: authHeaders(pin),
-        body: JSON.stringify({ time: newTime, order }),
+        body: JSON.stringify({ time: newTime, order, personnelId: selectedPersonnel }),
       });
       if (res.ok) {
         showToast('ok', 'Saat eklendi');
@@ -998,8 +1018,28 @@ function SlotsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', 
       <div className="admin-section-head">
         <div>
           <h2>Randevu Saatleri</h2>
-          <p>Müşterilere randevu sırasında gösterilecek saatleri ekle/çıkar.</p>
+          <p>Her personel için ayrı saatler tanımlayın. Müşteriler personel seçince yalnızca o personelin saatlerini görür.</p>
         </div>
+      </div>
+
+      <div className="slots-personnel-picker" style={{ marginBottom: '1rem' }}>
+        <label htmlFor="slots-personnel-select" style={{ display: 'block', marginBottom: '.4rem', fontWeight: 600 }}>
+          Personel
+        </label>
+        <select
+          id="slots-personnel-select"
+          value={selectedPersonnel}
+          onChange={(e) => setSelectedPersonnel(e.target.value)}
+          className="admin-input"
+          style={{ minWidth: 260 }}
+        >
+          {personnel.length === 0 && <option value="">Personel yok</option>}
+          {personnel.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}{p.branch ? ` — ${p.branch.name}` : ''}
+            </option>
+          ))}
+        </select>
       </div>
 
       <form className="slots-add" onSubmit={addSlot}>
@@ -1009,17 +1049,20 @@ function SlotsTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', 
           onChange={(e) => setNewTime(e.target.value)}
           className="slots-add-input"
           required
+          disabled={!selectedPersonnel}
         />
         <button
           type="submit"
           className="admin-btn-primary"
-          disabled={!newTime || adding}
+          disabled={!newTime || adding || !selectedPersonnel}
         >
           + Saat Ekle
         </button>
       </form>
 
-      {loading ? (
+      {!selectedPersonnel ? (
+        <div className="admin-empty">Önce bir personel seçin.</div>
+      ) : loading ? (
         <div className="admin-loading">Yükleniyor…</div>
       ) : sorted.length === 0 ? (
         <div className="admin-empty">

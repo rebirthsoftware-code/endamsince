@@ -32,16 +32,22 @@ function RandevuContent() {
       .catch(err => console.error(err));
   }, []);
 
-  /* ── Aktif saat slotlarını çek ── */
+  /* ── Seçili personelin saat slotlarını çek ── */
   useEffect(() => {
-    fetch('/api/time-slots')
+    if (!selectedPersonnel) {
+      setAllSlots([]);
+      setSlotsLoading(false);
+      return;
+    }
+    setSlotsLoading(true);
+    fetch(`/api/time-slots?personnelId=${encodeURIComponent(selectedPersonnel)}`)
       .then(res => res.json())
       .then(data => {
         setAllSlots(Array.isArray(data?.slots) ? data.slots : []);
       })
       .catch(() => setAllSlots([]))
       .finally(() => setSlotsLoading(false));
-  }, []);
+  }, [selectedPersonnel]);
 
   useEffect(() => {
     if (selectedBranch) {

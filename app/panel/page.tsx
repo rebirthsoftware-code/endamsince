@@ -440,12 +440,13 @@ function BlockSlotsModal({
   const [err, setErr] = useState('');
 
   useEffect(() => {
-    fetch('/api/time-slots')
+    if (!personnelId) return;
+    fetch(`/api/time-slots?personnelId=${encodeURIComponent(personnelId)}`)
       .then((r) => r.json())
       .then((d) => setAllSlots(Array.isArray(d?.slots) ? d.slots : []))
       .catch(() => setAllSlots([]))
       .finally(() => setLoadingSlots(false));
-  }, []);
+  }, [personnelId]);
 
   // O tarihteki aktif kayıtları map'le: time → appointment
   const slotState = useMemo(() => {
