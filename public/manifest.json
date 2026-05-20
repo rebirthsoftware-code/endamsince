@@ -1,15 +1,15 @@
 {
-  "name": "Endamsince Personel Paneli",
+  "name": "Endamsince Erkek Kuaför",
   "short_name": "Endamsince",
-  "description": "Endamsince Erkek Kuaför - personel randevu yönetim paneli",
-  "start_url": "/panel",
+  "description": "Endamsince Erkek Kuaför - 1979'dan bu yana Zonguldak. Online randevu, hizmetler, şubeler.",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#060606",
   "theme_color": "#E8591A",
   "lang": "tr",
-  "categories": ["business", "productivity"],
+  "categories": ["lifestyle", "business"],
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -26,10 +26,16 @@
   ],
   "shortcuts": [
     {
-      "name": "Panel",
-      "short_name": "Panel",
-      "url": "/panel",
-      "description": "Personel randevu paneli"
+      "name": "Randevu Al",
+      "short_name": "Randevu",
+      "url": "/randevu",
+      "description": "Online randevu oluştur"
+    },
+    {
+      "name": "Hizmetler",
+      "short_name": "Hizmetler",
+      "url": "/hizmetler",
+      "description": "Sunulan hizmetler"
     }
   ]
 }
