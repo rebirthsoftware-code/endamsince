@@ -10,11 +10,13 @@ type BeforeInstallPromptEvent = Event & {
 type Props = {
   label?: string;
   className?: string;
+  /** Buton title (tooltip) */
+  title?: string;
   /** iOS Safari'de install promptu yok; iPhone'lara yönerge göster */
   showIosHint?: boolean;
 };
 
-export default function InstallButton({ label = '📱 Uygulamayı Yükle', className, showIosHint = true }: Props) {
+export default function InstallButton({ label = '📱 Uygulamayı Yükle', className, title = 'Uygulamayı ana ekrana ekle', showIosHint = true }: Props) {
   const [event, setEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
   const [iosHint, setIosHint] = useState(false);
@@ -68,7 +70,7 @@ export default function InstallButton({ label = '📱 Uygulamayı Yükle', class
 
   return (
     <>
-      <button type="button" className={className || 'admin-logout'} onClick={handleClick} title="Yönetim panelini ana ekrana ekle">
+      <button type="button" className={className || 'admin-logout'} onClick={handleClick} title={title}>
         {label}
       </button>
       {iosHint && (

@@ -237,7 +237,7 @@ export default function AdminPage() {
           </button>
           <a href="/" className="admin-login-back">← Ana siteye dön</a>
           <div style={{ marginTop: 12, display: 'flex', justifyContent: 'center' }}>
-            <InstallButton label="📱 Uygulamayı Yükle" />
+            <InstallButton label="📱 Uygulamayı Yükle" title="Yönetim panelini ana ekrana ekle" />
           </div>
         </form>
       </div>
@@ -256,7 +256,7 @@ export default function AdminPage() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <InstallButton label="📱 Yükle" />
+            <InstallButton label="📱 Yükle" title="Yönetim panelini ana ekrana ekle" />
             <button
               className="admin-logout"
               onClick={() => { setRefreshKey((k) => k + 1); showToast('ok', 'Yenilendi'); }}

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import InstallButton from './InstallButton';
 
 const FOOTER_HIDDEN = ['/panel', '/admin'];
 
@@ -113,7 +114,14 @@ export default function Footer() {
 
         <div className="footer-bottom">
           <p>{v('footer.copyright', '© 2026 Endamsince Erkek Kuaför. Tüm hakları saklıdır.')}</p>
-          <Link href="/randevu" className="btn btn-primary btn-sm">Online Randevu</Link>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+            <InstallButton
+              label="📱 Ana Ekrana Ekle"
+              className="btn btn-primary btn-sm"
+              title="Randevu uygulamasını ana ekrana ekle"
+            />
+            <Link href="/randevu" className="btn btn-primary btn-sm">Online Randevu</Link>
+          </div>
         </div>
 
         <div className="footer-signature" aria-label="Tasarım & Geliştirme">
