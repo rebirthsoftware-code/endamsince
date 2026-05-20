@@ -544,6 +544,12 @@
   color: #fff;
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
 }
+.appt-badge-taken {
+  background: linear-gradient(135deg, #dc2626, #991b1b);
+  color: #fff;
+  animation: apptSoonGlow 1.6s ease-in-out infinite;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.45);
+}
 @keyframes apptSoonGlow {
   0%, 100% { transform: scale(1);     box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35); }
   50%      { transform: scale(1.06);  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.55); }

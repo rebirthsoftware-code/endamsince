@@ -277,16 +277,20 @@ export default function Panel() {
     });
   }, [realAppointments, filter]);
 
-  /* ── Aynı slot için PENDING başvuru sayısı (admin için çakışma uyarısı).
-       Panel tek bir personelin randevularını gösterdiği için date+time yeterli. */
-  const pendingCountBySlot = useMemo(() => {
-    const map = new Map<string, number>();
+  /* ── Aynı slot için PENDING başvuru sayısı + o slotta ONAY var mı.
+       Panel tek bir personelin randevılarını gösterdiği için date+time yeterli. */
+  const slotInfo = useMemo(() => {
+    const pendingCount = new Map<string, number>();
+    const approvedSet = new Set<string>();
     for (const a of realAppointments) {
-      if (a.status !== 'PENDING') continue;
       const key = `${a.date}|${a.time}`;
-      map.set(key, (map.get(key) ?? 0) + 1);
+      if (a.status === 'PENDING') {
+        pendingCount.set(key, (pendingCount.get(key) ?? 0) + 1);
+      } else if (a.status === 'APPROVED') {
+        approvedSet.add(key);
+      }
     }
-    return map;
+    return { pendingCount, approvedSet };
   }, [realAppointments]);
 
   /* ── İstatistikler ── */
@@ -415,7 +419,8 @@ export default function Panel() {
                 branchName={
                   personnelList.find((p) => p.id === selectedPersonnel)?.branch?.name
                 }
-                conflictCount={pendingCountBySlot.get(`${a.date}|${a.time}`) ?? 0}
+                conflictCount={slotInfo.pendingCount.get(`${a.date}|${a.time}`) ?? 0}
+                slotAlreadyApproved={slotInfo.approvedSet.has(`${a.date}|${a.time}`)}
               />
             ))}
           </ul>
@@ -663,7 +668,7 @@ function StatCard({
 }
 
 function AppointmentCard({
-  appt, onUpdate, now, branchName, conflictCount = 0,
+  appt, onUpdate, now, branchName, conflictCount = 0, slotAlreadyApproved = false,
 }: {
   appt: Appointment;
   onUpdate: (id: string, status: Appointment['status']) => void;
@@ -671,8 +676,11 @@ function AppointmentCard({
   branchName?: string;
   /** Aynı tarih+saatte PENDING durumdaki toplam başvuru sayısı (bu randevu dahil). */
   conflictCount?: number;
+  /** Aynı tarih+saatte başka onaylanmış bir randevu var mı? */
+  slotAlreadyApproved?: boolean;
 }) {
   const hasConflict = appt.status === 'PENDING' && conflictCount > 1;
+  const slotTaken = appt.status === 'PENDING' && slotAlreadyApproved;
   const phoneClean = (appt.customerPhone || '').replace(/\s+/g, '');
 
   const ctx = {
@@ -696,14 +704,14 @@ function AppointmentCard({
   };
 
   /** Onayla + WhatsApp onay mesajı tek hareket.
-   *  Aynı saatte başka bekleyen başvuru varsa kullanıcıyı uyar — backend
-   *  diğerlerini otomatik REJECTED yapacak. */
+   *  Aynı saatte başka bekleyen başvurular varsa hatırlatma: onayladıktan
+   *  sonra diğerlerini manuel olarak reddetmen gerek. */
   const handleApproveWithWhatsApp = () => {
     if (hasConflict) {
       const others = conflictCount - 1;
       const ok = confirm(
         `Bu saatte ${others} başka bekleyen başvuru daha var.\n\n` +
-        `${appt.customerName} onaylanırsa diğerleri otomatik olarak REDDEDİLECEK.\n\nDevam etmek istiyor musun?`
+        `${appt.customerName} onaylandıktan sonra diğerlerini "Reddet & WhatsApp" ile manuel reddetmeyi unutma.\n\nDevam et?`
       );
       if (!ok) return;
     }
@@ -739,10 +747,18 @@ function AppointmentCard({
         <div className="appt-row-top">
           <h3 className="appt-name">{appt.customerName}</h3>
           <div className="appt-row-tags">
-            {hasConflict && (
+            {slotTaken && (
+              <span
+                className="appt-badge appt-badge-taken"
+                title="Bu saat zaten onaylanmış. Bu başvuruyu reddet ve WhatsApp ile müşteriye bilgi ver."
+              >
+                🔒 SAAT DOLU — REDDET
+              </span>
+            )}
+            {hasConflict && !slotTaken && (
               <span
                 className="appt-badge appt-badge-conflict"
-                title="Aynı saate birden fazla başvuru var. Birini onaylarsan diğerleri otomatik reddedilir."
+                title="Aynı saate birden fazla başvuru var. Birini onayla, diğerlerini elle reddet."
               >
                 ⚠ {conflictCount} BAŞVURU
               </span>

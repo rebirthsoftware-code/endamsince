@@ -15,30 +15,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       data: { status },
     });
 
-    // Bir randevu ONAY'landığında, aynı personel/tarih/saatteki diğer
-    // bekleyen başvuruları otomatik olarak REJECTED'a çevir.
-    let autoRejected: string[] = [];
-    if (status === 'APPROVED') {
-      const others = await prisma.appointment.findMany({
-        where: {
-          id: { not: id },
-          personnelId: appointment.personnelId,
-          date: appointment.date,
-          time: appointment.time,
-          status: 'PENDING',
-        },
-        select: { id: true },
-      });
-      if (others.length > 0) {
-        autoRejected = others.map((o) => o.id);
-        await prisma.appointment.updateMany({
-          where: { id: { in: autoRejected } },
-          data: { status: 'REJECTED' },
-        });
-      }
-    }
-
-    return NextResponse.json({ ...appointment, autoRejected });
+    return NextResponse.json(appointment);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to update appointment' }, { status: 500 });
   }
