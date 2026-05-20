@@ -155,7 +155,7 @@ export default async function HomePage() {
         <section className="section branches-section">
           <div className="container">
             <div className="svc-header" style={{ marginBottom: '3rem' }}>
-              <span className="section-index">{pick(dict, 'home.branches.index', '00 / Şubelerimiz')}</span>
+              <span className="section-index">01 / Şubelerimiz</span>
               <span className="label-spaced" style={{ color: 'var(--text-muted, #888)' }}>
                 {pick(dict, 'home.branches.eyebrow', 'Zonguldak')}
               </span>
@@ -177,16 +177,21 @@ export default async function HomePage() {
                   <div className="branch-card-body">
                     <h3 className="branch-card-title">{b.name}</h3>
                     <p className="branch-card-loc">📍 {b.location}</p>
-                    {b.mapsUrl && (
-                      <a
-                        href={b.mapsUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="branch-card-cta"
-                      >
-                        Yol Tarifi Al <span aria-hidden>→</span>
-                      </a>
-                    )}
+                    <div className="branch-card-actions">
+                      <Link href={`/randevu?branchId=${b.id}`} className="branch-card-cta primary">
+                        Randevu Al <span aria-hidden>→</span>
+                      </Link>
+                      {b.mapsUrl && (
+                        <a
+                          href={b.mapsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="branch-card-cta"
+                        >
+                          📍 Konumu Gör
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </article>
               ))}
@@ -200,7 +205,7 @@ export default async function HomePage() {
         <div className="container">
           <div className="intro-grid">
             <div className="intro-index">
-              <span className="section-index">01 / Hakkımızda</span>
+              <span className="section-index">02 / Hakkımızda</span>
             </div>
             <div className="intro-body">
               <p className="h-section" style={{ marginBottom: '2.5rem' }}>
@@ -225,7 +230,7 @@ export default async function HomePage() {
         <section className="section" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)' }}>
           <div className="container">
             <div className="svc-header">
-              <span className="section-index">02 / Hizmetler</span>
+              <span className="section-index">03 / Hizmetler</span>
               <Link href="/hizmetler" className="btn" style={{ color: 'var(--text-dark)' }}>Tümünü Gör</Link>
             </div>
             <div className="svc-list">
@@ -263,7 +268,7 @@ export default async function HomePage() {
           </div>
         </div>
         <div className="about-split-body">
-          <span className="section-index">03 / Deneyim</span>
+          <span className="section-index">04 / Deneyim</span>
           <h2 className="h-section" style={{ marginBottom: '2rem' }}>
             {pick(dict, 'home.split.title.1', 'Her Detay')}<br />{pick(dict, 'home.split.title.2', 'Sizin İçin')}
           </h2>
@@ -282,7 +287,7 @@ export default async function HomePage() {
         <section className="section" style={{ borderTop: '1px solid var(--border)' }}>
           <div className="container">
             <div className="svc-header" style={{ marginBottom: '3rem' }}>
-              <span className="section-index">04 / Ürünler</span>
+              <span className="section-index">05 / Ürünler</span>
               <Link href="/urunler" className="btn" style={{ color: 'var(--text-dark)' }}>Tüm Ürünler</Link>
             </div>
             <div className="prod-prev-grid">
@@ -296,38 +301,6 @@ export default async function HomePage() {
                     {p.tag && <span className="label-orange" style={{ fontSize: '0.58rem', marginBottom: '0.5rem', display: 'block' }}>{p.tag}</span>}
                     <h3 className="h-card">{p.name}</h3>
                     <p className="label-spaced" style={{ marginTop: '0.4rem', fontSize: '0.6rem' }}>{p.subtitle}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* BRANCHES */}
-      {branches.length > 0 && (
-        <section className="section" style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)' }}>
-          <div className="container">
-            <div className="svc-header" style={{ marginBottom: '3rem' }}>
-              <span className="section-index">05 / Şubeler</span>
-            </div>
-            <div className="branches-row">
-              {branches.map((b, i) => (
-                <Link href={`/randevu?branchId=${b.id}`} key={b.id} className="branch-item">
-                  <div className="branch-item-img">
-                    {b.image
-                      ? <Image src={b.image} alt={b.name} fill style={{ objectFit: 'cover' }} />
-                      : <div className="branch-ph"><span>✂</span></div>
-                    }
-                    <div className="branch-item-overlay" />
-                  </div>
-                  <div className="branch-item-body">
-                    <span className="label-spaced" style={{ color: 'var(--orange)', fontSize: '0.58rem' }}>
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.6rem', fontWeight: 300, margin: '0.4rem 0' }}>{b.name}</h3>
-                    <p className="label-spaced" style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>📍 {b.location}</p>
-                    <span className="btn" style={{ color: 'var(--orange)', marginTop: '1.2rem', display: 'inline-block' }}>Randevu Al</span>
                   </div>
                 </Link>
               ))}

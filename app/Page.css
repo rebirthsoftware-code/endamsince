@@ -396,44 +396,6 @@
   border-top: 1px solid var(--border);
 }
 
-/* ── BRANCHES ROW ── */
-.branches-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit,minmax(280px,1fr));
-  gap: 2px;
-  background: var(--border);
-}
-.branch-item {
-  display: flex;
-  flex-direction: column;
-  text-decoration: none;
-  color: inherit;
-  background: var(--surface);
-  transition: background 0.4s ease, transform 0.4s ease;
-  cursor: none;
-}
-.branch-item:hover { background: var(--white); transform: translateY(-2px); }
-.branch-item-img {
-  position: relative;
-  height: 240px;
-  overflow: hidden;
-}
-.branch-item-img img {
-  transition: transform 1s cubic-bezier(0.25,0.46,0.45,0.94) !important;
-}
-.branch-item:hover .branch-item-img img { transform: scale(1.06) !important; }
-.branch-ph {
-  position: absolute; inset: 0;
-  background: var(--cream);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 3rem; color: var(--orange-pale);
-}
-.branch-item-overlay {
-  position: absolute; inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.35), transparent 55%);
-}
-.branch-item-body { padding: 2rem 2rem; }
-
 /* ── TEAM ROW ── */
 .team-row {
   display: flex;
@@ -642,21 +604,30 @@
   font-size: 0.92rem;
   color: var(--text-muted, #666);
 }
+.branch-card-actions {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  align-items: center;
+}
 .branch-card-cta {
-  margin-top: 0.8rem;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--orange, #E8591A);
-  border-bottom: 1px solid currentColor;
-  width: fit-content;
+  color: var(--text-muted, #666);
+  border-bottom: 1px solid transparent;
   padding-bottom: 0.2rem;
-  transition: gap 0.2s ease;
+  transition: gap 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
-.branch-card-cta:hover { gap: 0.9rem; }
+.branch-card-cta.primary {
+  color: var(--orange, #E8591A);
+  border-bottom-color: currentColor;
+}
+.branch-card-cta:hover { gap: 0.9rem; color: var(--orange, #E8591A); border-bottom-color: currentColor; }
 @media (max-width: 1024px) {
   .branches-grid { grid-template-columns: repeat(2, 1fr); }
 }
