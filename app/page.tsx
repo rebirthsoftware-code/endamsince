@@ -161,40 +161,41 @@ export default async function HomePage() {
               </span>
             </div>
             <div className="branches-grid">
-              {branches.map((b) => (
-                <article key={b.id} className="branch-card">
-                  {b.image && (
-                    <div className="branch-card-img">
-                      <Image
-                        src={b.image}
-                        alt={b.name}
-                        fill
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                        style={{ objectFit: 'cover' }}
-                      />
-                    </div>
-                  )}
-                  <div className="branch-card-body">
-                    <h3 className="branch-card-title">{b.name}</h3>
-                    <p className="branch-card-loc">📍 {b.location}</p>
-                    <div className="branch-card-actions">
-                      <Link href={`/randevu?branchId=${b.id}`} className="branch-card-cta primary">
-                        Randevu Al <span aria-hidden>→</span>
-                      </Link>
-                      {b.mapsUrl && (
+              {branches.map((b) => {
+                const mapsHref = b.mapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${b.name} ${b.location}`)}`;
+                return (
+                  <article key={b.id} className="branch-card">
+                    {b.image && (
+                      <div className="branch-card-img">
+                        <Image
+                          src={b.image}
+                          alt={b.name}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                          style={{ objectFit: 'cover' }}
+                        />
+                      </div>
+                    )}
+                    <div className="branch-card-body">
+                      <h3 className="branch-card-title">{b.name}</h3>
+                      <p className="branch-card-loc">📍 {b.location}</p>
+                      <div className="branch-card-actions">
+                        <Link href={`/randevu?branchId=${b.id}`} className="branch-card-cta primary">
+                          Randevu Al <span aria-hidden>→</span>
+                        </Link>
                         <a
-                          href={b.mapsUrl}
+                          href={mapsHref}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="branch-card-cta"
                         >
-                          📍 Konumu Gör
+                          📍 Haritada Aç
                         </a>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           </div>
         </section>
