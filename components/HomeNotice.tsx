@@ -15,8 +15,23 @@ export default function HomeNotice({ title, body, storageKey = 'home-notice-v1' 
     try {
       if (sessionStorage.getItem(storageKey) === 'dismissed') return;
     } catch {}
-    const t = setTimeout(() => setOpen(true), 400);
-    return () => clearTimeout(t);
+
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const show = () => {
+      timer = setTimeout(() => setOpen(true), 800);
+    };
+
+    // Loading screen bittikten sonra göster; yoksa kısa bir gecikmeyle aç.
+    if (document.querySelector('.ls-root')) {
+      window.addEventListener('ls:done', show, { once: true });
+    } else {
+      timer = setTimeout(() => setOpen(true), 1200);
+    }
+
+    return () => {
+      window.removeEventListener('ls:done', show);
+      if (timer) clearTimeout(timer);
+    };
   }, [storageKey]);
 
   const close = () => {
