@@ -596,3 +596,70 @@
   .about-split-badge { right: 1rem; width: 120px; height: 120px; }
   .about-split-body { padding: 2.5rem 1.5rem; }
 }
+
+/* =========================================================
+   ŞUBELER — Anasayfa
+   ========================================================= */
+.branches-section { border-top: 1px solid var(--border); }
+.branches-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+.branch-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface, #f7f5f1);
+  border: 1px solid var(--border, #e5e5e5);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.branch-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+}
+.branch-card-img {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #111;
+}
+.branch-card-body {
+  padding: 1.5rem 1.4rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.branch-card-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  margin: 0;
+  color: var(--text-dark);
+}
+.branch-card-loc {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--text-muted, #666);
+}
+.branch-card-cta {
+  margin-top: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--orange, #E8591A);
+  border-bottom: 1px solid currentColor;
+  width: fit-content;
+  padding-bottom: 0.2rem;
+  transition: gap 0.2s ease;
+}
+.branch-card-cta:hover { gap: 0.9rem; }
+@media (max-width: 1024px) {
+  .branches-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .branches-grid { grid-template-columns: 1fr; }
+}

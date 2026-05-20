@@ -17,10 +17,11 @@ export async function PATCH(
   try {
     const body = await request.json();
     const data: any = {};
-    for (const k of ['name', 'location', 'image'] as const) {
+    for (const k of ['name', 'location', 'image', 'mapsUrl'] as const) {
       if (typeof body[k] === 'string') data[k] = body[k];
     }
     if (body.image === null) data.image = null;
+    if (body.mapsUrl === null || body.mapsUrl === '') data.mapsUrl = null;
     const updated = await prisma.branch.update({ where: { id }, data });
     return NextResponse.json(updated);
   } catch (err) {

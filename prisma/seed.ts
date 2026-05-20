@@ -261,9 +261,9 @@ async function main() {
 
   // Aşağıdaki tablolar için: tablo BOŞSA seedler, doluysa atla.
   await seedIfEmpty('Branch', () => prisma.branch.count(), async () => {
-    const b1 = await prisma.branch.create({ data: { name: 'Endamsince Plus',   location: 'Endam Plus — Zonguldak',   image: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' } });
-    const b2 = await prisma.branch.create({ data: { name: 'Endamsince Urban',  location: 'Endam Urban — Zonguldak',  image: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' } });
-    const b3 = await prisma.branch.create({ data: { name: 'Endamsince Junior', location: 'Endam Junior — Zonguldak', image: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' } });
+    const b1 = await prisma.branch.create({ data: { name: 'Endamsince Plus',   location: 'Endam Plus — Zonguldak',   image: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', mapsUrl: 'https://maps.google.com/?q=Zonguldak' } });
+    const b2 = await prisma.branch.create({ data: { name: 'Endamsince Urban',  location: 'Endam Urban — Zonguldak',  image: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', mapsUrl: 'https://maps.google.com/?q=Zonguldak' } });
+    const b3 = await prisma.branch.create({ data: { name: 'Endamsince Junior', location: 'Endam Junior — Zonguldak', image: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', mapsUrl: 'https://maps.google.com/?q=Zonguldak' } });
     return [b1, b2, b3];
   });
 

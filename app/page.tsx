@@ -150,6 +150,51 @@ export default async function HomePage() {
         </div>
       </div>
 
+      {/* ŞUBELER */}
+      {branches.length > 0 && (
+        <section className="section branches-section">
+          <div className="container">
+            <div className="svc-header" style={{ marginBottom: '3rem' }}>
+              <span className="section-index">{pick(dict, 'home.branches.index', '00 / Şubelerimiz')}</span>
+              <span className="label-spaced" style={{ color: 'var(--text-muted, #888)' }}>
+                {pick(dict, 'home.branches.eyebrow', 'Zonguldak')}
+              </span>
+            </div>
+            <div className="branches-grid">
+              {branches.map((b) => (
+                <article key={b.id} className="branch-card">
+                  {b.image && (
+                    <div className="branch-card-img">
+                      <Image
+                        src={b.image}
+                        alt={b.name}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        style={{ objectFit: 'cover' }}
+                      />
+                    </div>
+                  )}
+                  <div className="branch-card-body">
+                    <h3 className="branch-card-title">{b.name}</h3>
+                    <p className="branch-card-loc">📍 {b.location}</p>
+                    {b.mapsUrl && (
+                      <a
+                        href={b.mapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="branch-card-cta"
+                      >
+                        Yol Tarifi Al <span aria-hidden>→</span>
+                      </a>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* INTRO */}
       <section className="section intro-section">
         <div className="container">
