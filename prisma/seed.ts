@@ -33,6 +33,11 @@ const SITE_CONTENT: Array<{
   // ── HOMEPAGE MARQUEE ──
   { key: 'home.marquee', value: 'ERKEK BAKIMI • ZİRVE DENEYİMİ • KLASİK USTURA • MODERN KESİM • ENDAMSINCE ZONGULDAK', label: 'Yürüyen yazı (• ile ayır)', group: 'home', order: 11, multiline: true },
 
+  // ── HOMEPAGE POPUP BİLDİRİM ──
+  { key: 'home.notice.enabled', value: '1', label: 'Popup bildirim açık mı? (1=açık, 0=kapalı)', group: 'home', order: 12 },
+  { key: 'home.notice.title',   value: 'Kurban Bayramında Açığız', label: 'Popup başlık', group: 'home', order: 13 },
+  { key: 'home.notice.body',    value: 'Kurban Bayramı süresince hizmetimiz devam etmektedir.\n\nRandevulu veya randevusuz gelebilirsiniz — sizleri ağırlamaktan mutluluk duyarız.', label: 'Popup gövde (\\n yeni satır)', group: 'home', order: 14, multiline: true },
+
   // ── HOMEPAGE INTRO ──
   { key: 'home.intro.title.1',  value: 'Sıradan değil,',                                     label: 'Intro başlık 1', group: 'home', order: 20 },
   { key: 'home.intro.title.2',  value: 'efsanevi',                                           label: 'Intro başlık 2 (turuncu)', group: 'home', order: 21 },

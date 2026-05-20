@@ -59,7 +59,8 @@ export default async function HomePage() {
   const marqueeRaw = pick(dict, 'home.marquee', 'ERKEK BAKIMI • ZİRVE DENEYİMİ • KLASİK USTURA • MODERN KESİM • ENDAMSINCE ZONGULDAK');
   const MARQUEE = (marqueeRaw + ' • ').repeat(5).split('•');
 
-  const noticeEnabled = pick(dict, 'home.notice.enabled', '1') === '1';
+  const noticeEnabledRaw = pick(dict, 'home.notice.enabled', '1').trim().toLowerCase();
+  const noticeEnabled = !['0', 'false', 'hayır', 'kapalı', 'off', 'no'].includes(noticeEnabledRaw);
   const noticeTitle = pick(dict, 'home.notice.title', 'Kurban Bayramında Açığız');
   const noticeBody = pick(
     dict,
