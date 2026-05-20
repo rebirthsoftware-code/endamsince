@@ -5,17 +5,12 @@ import { useEffect, useState } from 'react';
 type Props = {
   title: string;
   body: string;
-  storageKey?: string;
 };
 
-export default function HomeNotice({ title, body, storageKey = 'home-notice-v1' }: Props) {
+export default function HomeNotice({ title, body }: Props) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    try {
-      if (sessionStorage.getItem(storageKey) === 'dismissed') return;
-    } catch {}
-
     let timer: ReturnType<typeof setTimeout> | null = null;
     const show = () => {
       timer = setTimeout(() => setOpen(true), 800);
@@ -32,12 +27,9 @@ export default function HomeNotice({ title, body, storageKey = 'home-notice-v1' 
       window.removeEventListener('ls:done', show);
       if (timer) clearTimeout(timer);
     };
-  }, [storageKey]);
+  }, []);
 
-  const close = () => {
-    setOpen(false);
-    try { sessionStorage.setItem(storageKey, 'dismissed'); } catch {}
-  };
+  const close = () => setOpen(false);
 
   if (!open) return null;
 

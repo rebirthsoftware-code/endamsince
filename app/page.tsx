@@ -66,17 +66,11 @@ export default async function HomePage() {
     'home.notice.body',
     'Kurban Bayramı süresince hizmetimiz devam etmektedir.\n\nRandevulu veya randevusuz gelebilirsiniz — sizleri ağırlamaktan mutluluk duyarız.'
   );
-  const noticeVersion = pick(dict, 'home.notice.version', 'v1');
-
   return (
     <>
       <HomeAnimations />
       {noticeEnabled && (
-        <HomeNotice
-          title={noticeTitle}
-          body={noticeBody}
-          storageKey={`home-notice-${noticeVersion}`}
-        />
+        <HomeNotice title={noticeTitle} body={noticeBody} />
       )}
       {/* HERO */}
       <section className="hero">
