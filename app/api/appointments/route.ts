@@ -15,11 +15,13 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Dolu sayılanlar = onaylanmış randevular. PENDING'ler aynı saate başka
+    // başvuruları engellemez; admin onaylayınca slot kapanır.
     const taken = await prisma.appointment.findMany({
       where: {
         personnelId,
         date,
-        status: { in: ['PENDING', 'APPROVED'] },
+        status: 'APPROVED',
       },
       select: { time: true },
     });
@@ -47,18 +49,30 @@ export async function POST(request: Request) {
       }
     }
 
-    // Çift rezervasyon önleme
-    const existing = await prisma.appointment.findFirst({
+    // Çift rezervasyon önleme: aynı saat sadece ONAYLANMIŞ randevu varsa kapalı.
+    // Onaylanmamış (PENDING) başka başvurular varken aynı saate yeni başvuru
+    // alınabilir; admin birini onaylayınca slot kapanır.
+    const approved = await prisma.appointment.findFirst({
+      where: { personnelId, date, time, status: 'APPROVED' },
+    });
+    if (approved) {
+      return NextResponse.json(
+        { error: 'Bu saat artık dolu. Lütfen başka bir saat seçin.' },
+        { status: 409 }
+      );
+    }
+
+    // Aynı telefon aynı saate ikinci kez başvuru göndermesin (yanlışlıkla çift tıklamayı önler)
+    const duplicate = await prisma.appointment.findFirst({
       where: {
-        personnelId,
-        date,
-        time,
+        personnelId, date, time,
+        customerPhone,
         status: { in: ['PENDING', 'APPROVED'] },
       },
     });
-    if (existing) {
+    if (duplicate) {
       return NextResponse.json(
-        { error: 'Bu saat artık dolu. Lütfen başka bir saat seçin.' },
+        { error: 'Bu saat için zaten bir başvurunuz mevcut.' },
         { status: 409 }
       );
     }

@@ -277,6 +277,18 @@ export default function Panel() {
     });
   }, [realAppointments, filter]);
 
+  /* ── Aynı slot için PENDING başvuru sayısı (admin için çakışma uyarısı).
+       Panel tek bir personelin randevularını gösterdiği için date+time yeterli. */
+  const pendingCountBySlot = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const a of realAppointments) {
+      if (a.status !== 'PENDING') continue;
+      const key = `${a.date}|${a.time}`;
+      map.set(key, (map.get(key) ?? 0) + 1);
+    }
+    return map;
+  }, [realAppointments]);
+
   /* ── İstatistikler ── */
   const stats = useMemo(() => {
     const tk = todayISO();
@@ -403,6 +415,7 @@ export default function Panel() {
                 branchName={
                   personnelList.find((p) => p.id === selectedPersonnel)?.branch?.name
                 }
+                conflictCount={pendingCountBySlot.get(`${a.date}|${a.time}`) ?? 0}
               />
             ))}
           </ul>
@@ -650,13 +663,16 @@ function StatCard({
 }
 
 function AppointmentCard({
-  appt, onUpdate, now, branchName,
+  appt, onUpdate, now, branchName, conflictCount = 0,
 }: {
   appt: Appointment;
   onUpdate: (id: string, status: Appointment['status']) => void;
   now: Date;
   branchName?: string;
+  /** Aynı tarih+saatte PENDING durumdaki toplam başvuru sayısı (bu randevu dahil). */
+  conflictCount?: number;
 }) {
+  const hasConflict = appt.status === 'PENDING' && conflictCount > 1;
   const phoneClean = (appt.customerPhone || '').replace(/\s+/g, '');
 
   const ctx = {
@@ -679,8 +695,18 @@ function AppointmentCard({
     }
   };
 
-  /** Onayla + WhatsApp onay mesajı tek hareket. */
+  /** Onayla + WhatsApp onay mesajı tek hareket.
+   *  Aynı saatte başka bekleyen başvuru varsa kullanıcıyı uyar — backend
+   *  diğerlerini otomatik REJECTED yapacak. */
   const handleApproveWithWhatsApp = () => {
+    if (hasConflict) {
+      const others = conflictCount - 1;
+      const ok = confirm(
+        `Bu saatte ${others} başka bekleyen başvuru daha var.\n\n` +
+        `${appt.customerName} onaylanırsa diğerleri otomatik olarak REDDEDİLECEK.\n\nDevam etmek istiyor musun?`
+      );
+      if (!ok) return;
+    }
     onUpdate(appt.id, 'APPROVED');
     const url = buildWhatsAppUrl(appt.customerPhone, approvalMessage(ctx));
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -713,6 +739,14 @@ function AppointmentCard({
         <div className="appt-row-top">
           <h3 className="appt-name">{appt.customerName}</h3>
           <div className="appt-row-tags">
+            {hasConflict && (
+              <span
+                className="appt-badge appt-badge-conflict"
+                title="Aynı saate birden fazla başvuru var. Birini onaylarsan diğerleri otomatik reddedilir."
+              >
+                ⚠ {conflictCount} BAŞVURU
+              </span>
+            )}
             {isApproaching && (
               <span className="appt-badge appt-badge-soon" title={`Yaklaşık ${Math.max(1, Math.round(hLeft * 60))} dk kaldı`}>
                 ⏰ YAKLAŞIYOR
