@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { PrismaClient } from '@prisma/client';
 import HomeAnimations from '@/components/HomeAnimations';
+import HomeNotice from '@/components/HomeNotice';
 import { getSiteContent, pick } from '@/lib/content';
 import './Page.css';
 
@@ -58,9 +59,25 @@ export default async function HomePage() {
   const marqueeRaw = pick(dict, 'home.marquee', 'ERKEK BAKIMI • ZİRVE DENEYİMİ • KLASİK USTURA • MODERN KESİM • ENDAMSINCE ZONGULDAK');
   const MARQUEE = (marqueeRaw + ' • ').repeat(5).split('•');
 
+  const noticeEnabled = pick(dict, 'home.notice.enabled', '1') === '1';
+  const noticeTitle = pick(dict, 'home.notice.title', 'Kurban Bayramında Açığız');
+  const noticeBody = pick(
+    dict,
+    'home.notice.body',
+    'Kurban Bayramı süresince hizmetimiz devam etmektedir.\n\nRandevulu veya randevusuz gelebilirsiniz — sizleri ağırlamaktan mutluluk duyarız.'
+  );
+  const noticeVersion = pick(dict, 'home.notice.version', 'v1');
+
   return (
     <>
       <HomeAnimations />
+      {noticeEnabled && (
+        <HomeNotice
+          title={noticeTitle}
+          body={noticeBody}
+          storageKey={`home-notice-${noticeVersion}`}
+        />
+      )}
       {/* HERO */}
       <section className="hero">
         <div className="hero-bg">
