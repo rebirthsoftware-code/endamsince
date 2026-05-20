@@ -12,6 +12,7 @@ model Branch {
   name          String
   location      String
   image         String?
+  mapsUrl       String?
   personnel     Personnel[]
   servicePrices ServicePrice[]
 }

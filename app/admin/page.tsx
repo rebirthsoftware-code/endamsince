@@ -33,6 +33,7 @@ type Branch = {
   name: string;
   location: string;
   image?: string | null;
+  mapsUrl?: string | null;
 };
 type Tab =
   | 'services' | 'personnel' | 'branches' | 'slots' | 'gallery'
@@ -886,6 +887,7 @@ function BranchModal({
     name: initial.name,
     location: initial.location,
     image: initial.image ?? '',
+    mapsUrl: initial.mapsUrl ?? '',
   });
 
   return (
@@ -906,6 +908,14 @@ function BranchModal({
           </Field>
           <Field label="Konum" required>
             <input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} required />
+          </Field>
+          <Field label="Google Maps URL (yol tarifi için, opsiyonel)">
+            <input
+              type="url"
+              value={form.mapsUrl}
+              onChange={(e) => setForm({ ...form, mapsUrl: e.target.value })}
+              placeholder="https://maps.google.com/?q=..."
+            />
           </Field>
           <ImageUpload
             value={form.image}
