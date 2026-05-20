@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { isDateClosed } from '@/lib/closure';
 
 const prisma = new PrismaClient();
 
@@ -32,6 +33,10 @@ export async function GET(request: Request) {
     }
     if (dow === 0) {
       return NextResponse.json({ slots: [], closed: true, reason: 'Pazar günü kapalıyız.' });
+    }
+    const closure = await isDateClosed(date);
+    if (closure.closed) {
+      return NextResponse.json({ slots: [], closed: true, reason: closure.reason });
     }
     const slots = await prisma.timeSlot.findMany({
       where: { active: true, personnelId, dayOfWeek: dow },

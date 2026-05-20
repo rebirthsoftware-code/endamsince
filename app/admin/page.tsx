@@ -1479,6 +1479,7 @@ const CONTENT_GROUP_LABELS: Record<string, string> = {
   global:    '🌐 Genel',
   contact:   '📞 İletişim',
   home:      '🏠 Anasayfa',
+  booking:   '📅 Randevu',
   about:     '📖 Hakkımızda',
   hizmetler: '✂️  Hizmetler',
   urunler:   '🧴 Ürünler',
