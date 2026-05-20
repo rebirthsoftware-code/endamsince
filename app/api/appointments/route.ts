@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { sendPushToPersonnel } from '@/lib/push';
+import { isDateClosed } from '@/lib/closure';
 
 const prisma = new PrismaClient();
 
@@ -45,6 +46,15 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
+    }
+
+    // Yönetici tarafından kapatılmış tarih aralığı kontrolü
+    const closure = await isDateClosed(String(date || ''));
+    if (closure.closed) {
+      return NextResponse.json(
+        { error: closure.reason || 'Bu tarih aralığında kapalıyız. Lütfen başka bir gün seçin.' },
+        { status: 400 }
+      );
     }
 
     // Çift rezervasyon önleme

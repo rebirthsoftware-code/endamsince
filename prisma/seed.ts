@@ -38,6 +38,11 @@ const SITE_CONTENT: Array<{
   { key: 'home.notice.title',   value: 'Kurban Bayramında Açığız', label: 'Popup başlık', group: 'home', order: 13 },
   { key: 'home.notice.body',    value: 'Kurban Bayramı süresince hizmetimiz devam etmektedir.\n\nRandevulu veya randevusuz gelebilirsiniz — sizleri ağırlamaktan mutluluk duyarız.', label: 'Popup gövde (\\n yeni satır)', group: 'home', order: 14, multiline: true },
 
+  // ── RANDEVU KAPATMA ARALIĞI ──
+  { key: 'booking.closure.start',  value: '2026-05-22', label: 'Kapalı dönem başlangıcı (YYYY-MM-DD, boş bırakılırsa kapatma yok)', group: 'booking', order: 1 },
+  { key: 'booking.closure.end',    value: '2026-05-30', label: 'Kapalı dönem bitişi (YYYY-MM-DD, dahil)', group: 'booking', order: 2 },
+  { key: 'booking.closure.reason', value: 'Bu tarih aralığında kapalıyız. Lütfen başka bir gün seçin.', label: 'Kapatma mesajı (kullanıcıya gösterilir)', group: 'booking', order: 3, multiline: true },
+
   // ── HOMEPAGE INTRO ──
   { key: 'home.intro.title.1',  value: 'Sıradan değil,',                                     label: 'Intro başlık 1', group: 'home', order: 20 },
   { key: 'home.intro.title.2',  value: 'efsanevi',                                           label: 'Intro başlık 2 (turuncu)', group: 'home', order: 21 },
