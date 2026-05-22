@@ -406,6 +406,15 @@
   color: var(--p-text-mid);
   flex-wrap: wrap;
 }
+.appt-services {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.88rem;
+  color: var(--p-text-mid);
+  margin-top: 0.4rem;
+  flex-wrap: wrap;
+}
 .appt-phone-num {
   font-family: 'Inter', sans-serif;
   letter-spacing: 0.02em;

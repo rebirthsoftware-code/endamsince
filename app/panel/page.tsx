@@ -32,6 +32,7 @@ type Appointment = {
   customerPhone: string;
   date: string;
   time: string;
+  services?: string[];
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
   createdAt?: string;
 };
@@ -735,6 +736,13 @@ function AppointmentCard({
             Ara
           </a>
         </div>
+
+        {appt.services && appt.services.length > 0 && (
+          <div className="appt-services">
+            <span aria-hidden>✂️</span>
+            <span>{appt.services.join(' · ')}</span>
+          </div>
+        )}
 
         {appt.status === 'PENDING' && (
           <div className="appt-actions">

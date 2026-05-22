@@ -35,6 +35,9 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { personnelId, customerName, customerPhone, date, time } = body;
+    const services: string[] = Array.isArray(body.services)
+      ? body.services.filter((s: unknown) => typeof s === 'string' && s.trim()).map((s: string) => s.trim()).slice(0, 10)
+      : [];
 
     // Pazar günü kapalı
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(date || ''));
@@ -80,6 +83,7 @@ export async function POST(request: Request) {
         customerPhone,
         date,
         time,
+        services,
         status: 'PENDING',
       },
     });
@@ -89,9 +93,10 @@ export async function POST(request: Request) {
     // için push'u burada AWAIT etmemiz gerekiyor. Aksi halde bildirim
     // teslimi yarıda kesilebilir veya çok geç teslim edilir.
     try {
+      const svcSummary = services.length > 0 ? ` · ${services.join(', ')}` : '';
       const result = await sendPushToPersonnel(prisma, personnelId, {
         title: 'Yeni Randevu',
-        body: `${customerName} — ${date} ${time}`,
+        body: `${customerName} — ${date} ${time}${svcSummary}`,
         tag: `appt-${appointment.id}`,
         url: '/panel',
       });
