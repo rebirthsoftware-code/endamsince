@@ -110,6 +110,7 @@ model Appointment {
   customerPhone   String
   date            String    // YYYY-MM-DD
   time            String    // HH:MM
+  services        String[]  @default([])
   status          String    @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
   personnelId     String
   personnel       Personnel @relation(fields: [personnelId], references: [id])

@@ -11,8 +11,10 @@ function RandevuContent() {
   const [step, setStep] = useState(1);
   const [branches, setBranches] = useState<any[]>([]);
   const [personnel, setPersonnel] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string>(branchIdParam || '');
   const [selectedPersonnel, setSelectedPersonnel] = useState<string>('');
+  const [selectedServiceNames, setSelectedServiceNames] = useState<string[]>([]);
   // Tarih input'u boş gözükmesin diye bugünü varsayılan yap (kullanıcı değiştirebilir)
   const [date, setDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState<string>('');
@@ -63,6 +65,10 @@ function RandevuContent() {
         .then(res => res.json())
         .then(data => setPersonnel(data))
         .catch(err => console.error(err));
+      fetch(`/api/services?branchId=${selectedBranch}`)
+        .then(res => res.json())
+        .then(data => setServices(Array.isArray(data) ? data : []))
+        .catch(err => console.error(err));
     }
   }, [selectedBranch]);
 
@@ -93,7 +99,8 @@ function RandevuContent() {
           customerName,
           customerPhone,
           date,
-          time
+          time,
+          services: selectedServiceNames,
         })
       });
       if (res.ok) {
@@ -137,13 +144,13 @@ function RandevuContent() {
     <div className="container section" style={{ minHeight: '80vh', paddingTop: '8rem' }}>
       <div className="text-center mb-8">
         <h1 className="heading-2">Randevu Oluştur</h1>
-        <p className="text-secondary">Sadece 4 adımda yerinizi ayırtın.</p>
+        <p className="text-secondary">Sadece 5 adımda yerinizi ayırtın.</p>
       </div>
-      
+
       <div className="booking-card glass mx-auto shadow-lg">
         {/* Progress Bar */}
         <div className="progress-container mb-8">
-          <div className="progress-bar" style={{ width: `${(step / 4) * 100}%` }}></div>
+          <div className="progress-bar" style={{ width: `${(step / 5) * 100}%` }}></div>
         </div>
 
         {step === 1 && (
@@ -195,7 +202,45 @@ function RandevuContent() {
 
         {step === 3 && (
           <div className="step-content fade-in">
-            <h3 className="heading-3 mb-6">3. Tarih ve Saat</h3>
+            <h3 className="heading-3 mb-6">3. Ne Yaptıracaksınız?</h3>
+            <p className="text-secondary text-sm mb-4">Birden fazla hizmet seçebilirsiniz.</p>
+            <div className="grid-options">
+              {services.map((s) => {
+                const checked = selectedServiceNames.includes(s.name);
+                return (
+                  <div
+                    key={s.id}
+                    className={`option-card ${checked ? 'selected' : ''}`}
+                    onClick={() => {
+                      setSelectedServiceNames((prev) =>
+                        prev.includes(s.name) ? prev.filter((n) => n !== s.name) : [...prev, s.name]
+                      );
+                    }}
+                  >
+                    <div style={{ fontSize: '1.6rem', marginBottom: '0.4rem' }}>{s.icon || '✂️'}</div>
+                    <h4 className={checked ? 'text-gold' : ''}>{s.name}</h4>
+                    <p className="text-secondary text-sm mt-2">{s.price} · {s.duration}</p>
+                  </div>
+                );
+              })}
+              {services.length === 0 && <p className="text-secondary">Bu şubede hizmet bulunamadı.</p>}
+            </div>
+            <div className="flex-between mt-8 gap-4">
+              <button className="btn btn-outline" onClick={prevStep}>Geri</button>
+              <button
+                className="btn btn-primary"
+                disabled={selectedServiceNames.length === 0}
+                onClick={() => setStep(4)}
+              >
+                Devam Et ({selectedServiceNames.length} seçim)
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 4 && (
+          <div className="step-content fade-in">
+            <h3 className="heading-3 mb-6">4. Tarih ve Saat</h3>
             <div className="input-group">
               <label className="input-label">Tarih Seçin</label>
               <input type="date" className="input-field input-lg" value={date} onChange={e => setDate(e.target.value)} min={new Date().toISOString().split('T')[0]} />
@@ -232,7 +277,7 @@ function RandevuContent() {
                         onClick={() => {
                           if (disabled) return;
                           setTime(slot);
-                          setStep(4);
+                          setStep(5);
                         }}
                         className={`time-slot ${isSelected ? 'selected' : ''} ${isTaken ? 'taken' : ''} ${isPast ? 'past' : ''}`}
                       >
@@ -252,13 +297,16 @@ function RandevuContent() {
           </div>
         )}
 
-        {step === 4 && (
+        {step === 5 && (
           <form className="step-content fade-in" onSubmit={handleSubmit}>
-            <h3 className="heading-3 mb-6">4. Kişisel Bilgileriniz</h3>
-            
+            <h3 className="heading-3 mb-6">5. Kişisel Bilgileriniz</h3>
+
             <div className="highlight-box mb-6">
               <p className="text-sm text-secondary">Seçtiğiniz Randevu:</p>
               <p className="font-bold">{date} - Saat {time}</p>
+              {selectedServiceNames.length > 0 && (
+                <p className="text-sm mt-2"><strong>Hizmetler:</strong> {selectedServiceNames.join(', ')}</p>
+              )}
             </div>
 
             {submitError && (
