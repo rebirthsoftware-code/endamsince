@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import InstallButton from '@/components/InstallButton';
+import { compressImage } from '@/lib/compress';
 import './Admin.css';
 
 const SESSION_KEY = 'endamsince_admin_session_v1';
@@ -1156,8 +1157,9 @@ function GalleryTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err'
     let failed = 0;
     for (const file of Array.from(files)) {
       try {
+        const optimized = await compressImage(file).catch(() => file);
         const fd = new FormData();
-        fd.append('file', file);
+        fd.append('file', optimized);
         fd.append('folder', 'gallery');
         const upRes = await adminFetch('/api/admin/upload', {
           method: 'POST',
@@ -1391,8 +1393,9 @@ function ImageUpload({
     setErr('');
     setUploading(true);
     try {
+      const optimized = await compressImage(file).catch(() => file);
       const fd = new FormData();
-      fd.append('file', file);
+      fd.append('file', optimized);
       fd.append('folder', folder);
       const res = await adminFetch('/api/admin/upload', {
         method: 'POST',
