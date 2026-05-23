@@ -162,6 +162,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>('services');
   const [refreshKey, setRefreshKey] = useState(0);
   const [toast, setToast] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const showToast = useCallback((type: 'ok' | 'err', msg: string) => {
     setToast({ type, msg });
@@ -245,18 +246,65 @@ export default function AdminPage() {
     );
   }
 
+  const NAV_GROUPS: { label: string; items: { id: Tab; label: string; icon: string }[] }[] = [
+    {
+      label: 'İşletme',
+      items: [
+        { id: 'services',  label: 'Hizmetler', icon: '✂️' },
+        { id: 'personnel', label: 'Personel',  icon: '👤' },
+        { id: 'branches',  label: 'Şubeler',   icon: '🏢' },
+        { id: 'slots',     label: 'Saatler',   icon: '🕒' },
+      ],
+    },
+    {
+      label: 'Web Sitesi',
+      items: [
+        { id: 'content',      label: 'İçerik',        icon: '📝' },
+        { id: 'gallery',      label: 'Galeri',        icon: '🖼️' },
+        { id: 'testimonials', label: 'Görüşler',      icon: '💬' },
+        { id: 'faqs',         label: 'SSS',           icon: '❓' },
+        { id: 'stats',        label: 'İstatistikler', icon: '📊' },
+        { id: 'cards',        label: 'Kartlar',       icon: '🎴' },
+      ],
+    },
+    {
+      label: 'Katalog',
+      items: [
+        { id: 'packages', label: 'Paketler', icon: '📦' },
+        { id: 'products', label: 'Ürünler',  icon: '🧴' },
+      ],
+    },
+  ];
+
+  const activeLabel =
+    NAV_GROUPS.flatMap((g) => g.items).find((i) => i.id === tab)?.label || '';
+
+  const selectTab = (t: Tab) => {
+    setTab(t);
+    setSidebarOpen(false);
+  };
+
   return (
     <div className="admin-shell">
       <header className="admin-header">
         <div className="admin-header-inner">
+          <button
+            type="button"
+            className="admin-burger"
+            onClick={() => setSidebarOpen((v) => !v)}
+            aria-label="Menüyü aç/kapat"
+            aria-expanded={sidebarOpen}
+          >
+            <span /><span /><span />
+          </button>
           <div className="admin-brand">
             <span className="admin-mark">EN</span>
             <div>
               <strong>Endamsince</strong>
-              <small>Yönetim Paneli</small>
+              <small>{activeLabel || 'Yönetim Paneli'}</small>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div className="admin-header-actions">
             <InstallButton label="📱 Yükle" title="Yönetim panelini ana ekrana ekle" />
             <button
               className="admin-logout"
@@ -269,108 +317,46 @@ export default function AdminPage() {
             <button className="admin-logout" onClick={logout}>⎋ Çıkış</button>
           </div>
         </div>
-        <nav className="admin-tabs" role="tablist">
-          <button
-            className={`admin-tab ${tab === 'services' ? 'active' : ''}`}
-            onClick={() => setTab('services')}
-          >
-            <span className="admin-tab-icon">✂️</span>
-            Hizmetler
-          </button>
-          <button
-            className={`admin-tab ${tab === 'personnel' ? 'active' : ''}`}
-            onClick={() => setTab('personnel')}
-          >
-            <span className="admin-tab-icon">👤</span>
-            Personel
-          </button>
-          <button
-            className={`admin-tab ${tab === 'branches' ? 'active' : ''}`}
-            onClick={() => setTab('branches')}
-          >
-            <span className="admin-tab-icon">🏢</span>
-            Şubeler
-          </button>
-          <button
-            className={`admin-tab ${tab === 'slots' ? 'active' : ''}`}
-            onClick={() => setTab('slots')}
-          >
-            <span className="admin-tab-icon">🕒</span>
-            Saatler
-          </button>
-          <button
-            className={`admin-tab ${tab === 'gallery' ? 'active' : ''}`}
-            onClick={() => setTab('gallery')}
-          >
-            <span className="admin-tab-icon">🖼️</span>
-            Galeri
-          </button>
-          <button
-            className={`admin-tab ${tab === 'content' ? 'active' : ''}`}
-            onClick={() => setTab('content')}
-          >
-            <span className="admin-tab-icon">📝</span>
-            İçerik
-          </button>
-          <button
-            className={`admin-tab ${tab === 'testimonials' ? 'active' : ''}`}
-            onClick={() => setTab('testimonials')}
-          >
-            <span className="admin-tab-icon">💬</span>
-            Görüşler
-          </button>
-          <button
-            className={`admin-tab ${tab === 'faqs' ? 'active' : ''}`}
-            onClick={() => setTab('faqs')}
-          >
-            <span className="admin-tab-icon">❓</span>
-            SSS
-          </button>
-          <button
-            className={`admin-tab ${tab === 'packages' ? 'active' : ''}`}
-            onClick={() => setTab('packages')}
-          >
-            <span className="admin-tab-icon">📦</span>
-            Paketler
-          </button>
-          <button
-            className={`admin-tab ${tab === 'products' ? 'active' : ''}`}
-            onClick={() => setTab('products')}
-          >
-            <span className="admin-tab-icon">🧴</span>
-            Ürünler
-          </button>
-          <button
-            className={`admin-tab ${tab === 'stats' ? 'active' : ''}`}
-            onClick={() => setTab('stats')}
-          >
-            <span className="admin-tab-icon">📊</span>
-            İstatistikler
-          </button>
-          <button
-            className={`admin-tab ${tab === 'cards' ? 'active' : ''}`}
-            onClick={() => setTab('cards')}
-          >
-            <span className="admin-tab-icon">🎴</span>
-            Kartlar
-          </button>
-        </nav>
       </header>
 
-      <main className="admin-container">
-        {tab === 'services'     && <ServicesTab     key={`services-${refreshKey}`}     pin={authPin} showToast={showToast} />}
-        {tab === 'personnel'    && <PersonnelTab    key={`personnel-${refreshKey}`}    pin={authPin} showToast={showToast} />}
-        {tab === 'branches'     && <BranchesTab     key={`branches-${refreshKey}`}     pin={authPin} showToast={showToast} />}
-        {tab === 'slots'        && <SlotsTab        key={`slots-${refreshKey}`}        pin={authPin} showToast={showToast} />}
-        {tab === 'gallery'      && <GalleryTab      key={`gallery-${refreshKey}`}      pin={authPin} showToast={showToast} />}
-        {tab === 'content'      && <ContentTab      key={`content-${refreshKey}`}      pin={authPin} showToast={showToast} />}
-        {tab === 'testimonials' && <TestimonialsTab key={`testimonials-${refreshKey}`} pin={authPin} showToast={showToast} />}
-        {tab === 'faqs'         && <FaqsTab         key={`faqs-${refreshKey}`}         pin={authPin} showToast={showToast} />}
-        {tab === 'packages'     && <PackagesTab     key={`packages-${refreshKey}`}     pin={authPin} showToast={showToast} />}
-        {tab === 'products'     && <ProductsTab     key={`products-${refreshKey}`}     pin={authPin} showToast={showToast} />}
-        {tab === 'stats'        && <StatsTab        key={`stats-${refreshKey}`}        pin={authPin} showToast={showToast} />}
-        {tab === 'cards'        && <CardsTab        key={`cards-${refreshKey}`}        pin={authPin} showToast={showToast} />}
-      </main>
+      <div className="admin-layout">
+        <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`} role="navigation">
+          {NAV_GROUPS.map((group) => (
+            <div className="admin-nav-group" key={group.label}>
+              <span className="admin-nav-label">{group.label}</span>
+              {group.items.map((item) => (
+                <button
+                  key={item.id}
+                  className={`admin-nav-item ${tab === item.id ? 'active' : ''}`}
+                  onClick={() => selectTab(item.id)}
+                >
+                  <span className="admin-nav-icon">{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </aside>
+        <div
+          className={`admin-backdrop ${sidebarOpen ? 'show' : ''}`}
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden
+        />
+        <main className="admin-container">
+          {tab === 'services'     && <ServicesTab     key={`services-${refreshKey}`}     pin={authPin} showToast={showToast} />}
+          {tab === 'personnel'    && <PersonnelTab    key={`personnel-${refreshKey}`}    pin={authPin} showToast={showToast} />}
+          {tab === 'branches'     && <BranchesTab     key={`branches-${refreshKey}`}     pin={authPin} showToast={showToast} />}
+          {tab === 'slots'        && <SlotsTab        key={`slots-${refreshKey}`}        pin={authPin} showToast={showToast} />}
+          {tab === 'gallery'      && <GalleryTab      key={`gallery-${refreshKey}`}      pin={authPin} showToast={showToast} />}
+          {tab === 'content'      && <ContentTab      key={`content-${refreshKey}`}      pin={authPin} showToast={showToast} />}
+          {tab === 'testimonials' && <TestimonialsTab key={`testimonials-${refreshKey}`} pin={authPin} showToast={showToast} />}
+          {tab === 'faqs'         && <FaqsTab         key={`faqs-${refreshKey}`}         pin={authPin} showToast={showToast} />}
+          {tab === 'packages'     && <PackagesTab     key={`packages-${refreshKey}`}     pin={authPin} showToast={showToast} />}
+          {tab === 'products'     && <ProductsTab     key={`products-${refreshKey}`}     pin={authPin} showToast={showToast} />}
+          {tab === 'stats'        && <StatsTab        key={`stats-${refreshKey}`}        pin={authPin} showToast={showToast} />}
+          {tab === 'cards'        && <CardsTab        key={`cards-${refreshKey}`}        pin={authPin} showToast={showToast} />}
+        </main>
+      </div>
 
       {toast && (
         <div className={`admin-toast admin-toast-${toast.type}`}>
