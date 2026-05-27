@@ -9,9 +9,14 @@ const nextConfig: NextConfig = {
         hostname: 'images.unsplash.com',
       },
       {
-        // Vercel Blob: <storeId>.public.blob.vercel-storage.com
+        // Vercel Blob (eski dosyalar için, migration sonrası kaldırılabilir)
         protocol: 'https',
         hostname: '*.public.blob.vercel-storage.com',
+      },
+      {
+        // Cloudflare R2 public dev URL
+        protocol: 'https',
+        hostname: 'pub-5e1f2891b059489d97e0f2ab30fb95c8.r2.dev',
       },
     ],
   },

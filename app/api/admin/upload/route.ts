@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { put } from '@vercel/blob';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { requireAdmin } from '@/lib/admin-auth';
 
 
@@ -10,6 +10,15 @@ const MAX_BYTES = 5 * 1024 * 1024; // 5MB
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export const runtime = 'nodejs';
+
+const r2 = new S3Client({
+  region: 'auto',
+  endpoint: process.env.R2_ENDPOINT,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID ?? '',
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY ?? '',
+  },
+});
 
 export async function POST(request: Request) {
   const auth = requireAdmin(request);
@@ -41,13 +50,17 @@ export async function POST(request: Request) {
     const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
     const key = `${safeFolder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
-    const blob = await put(key, file, {
-      access: 'public',
-      contentType: file.type,
-      addRandomSuffix: false,
-    });
+    const buffer = Buffer.from(await file.arrayBuffer());
 
-    return NextResponse.json({ url: blob.url, pathname: blob.pathname });
+    await r2.send(new PutObjectCommand({
+      Bucket: process.env.R2_BUCKET,
+      Key: key,
+      Body: buffer,
+      ContentType: file.type,
+    }));
+
+    const url = `${process.env.R2_PUBLIC_URL}/${key}`;
+    return NextResponse.json({ url, pathname: key });
   } catch (err) {
     console.error('Upload hatası:', err);
     return NextResponse.json({ error: 'Yükleme başarısız' }, { status: 500 });
