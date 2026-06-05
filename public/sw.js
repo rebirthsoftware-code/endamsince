@@ -1,7 +1,19 @@
 /* Endamsince Service Worker
    Push bildirimleri + offline fallback */
 
-const VERSION = 'endamsince-v1';
+const VERSION = 'endamsince-v2';
+
+/** Açık olan tüm panel sekmelerine "yenile" mesajı gönder. */
+async function broadcastRefresh(payload) {
+  try {
+    const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of clientList) {
+      try {
+        client.postMessage({ type: 'appointments:refresh', payload: payload || null });
+      } catch (_) {}
+    }
+  } catch (_) {}
+}
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -35,7 +47,13 @@ self.addEventListener('push', (event) => {
     },
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(title, options),
+      // Açık panel sekmelerinin "Bekleyen" sayısı anında güncellensin.
+      broadcastRefresh({ tag: options.tag, data: options.data }),
+    ])
+  );
 });
 
 /* ── Bildirime tıklayınca paneli aç ── */

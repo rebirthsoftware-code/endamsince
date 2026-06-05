@@ -178,6 +178,41 @@ export default function Panel() {
     return () => clearInterval(id);
   }, [isLoggedIn, selectedPersonnel, fetchAppointments]);
 
+  /* ── Service Worker'dan gelen "yeni randevu" sinyali ile anında yenile ──
+   * Push bildirimi tetiklendiğinde SW tüm panel sekmelerine
+   * { type: 'appointments:refresh' } mesajı gönderir; bir sonraki
+   * 30sn poll'u beklemeden "Bekleyen" sayısı güncellenir. Sekme arka
+   * planda olduğunda da çalışır (postMessage SW kaynaklıdır). */
+  useEffect(() => {
+    if (!isLoggedIn || !selectedPersonnel) return;
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+
+    const onMessage = (event: MessageEvent) => {
+      const data = event.data;
+      if (data && typeof data === 'object' && data.type === 'appointments:refresh') {
+        fetchAppointments(selectedPersonnel, true);
+      }
+    };
+    navigator.serviceWorker.addEventListener('message', onMessage);
+    return () => navigator.serviceWorker.removeEventListener('message', onMessage);
+  }, [isLoggedIn, selectedPersonnel, fetchAppointments]);
+
+  /* ── Sekme tekrar görünür olunca yenile ──
+   * Bildirime tıklayıp sekmeye dönüldüğünde, kullanıcının
+   * son durumu görmesi için anlık fetch. */
+  useEffect(() => {
+    if (!isLoggedIn || !selectedPersonnel) return;
+    if (typeof document === 'undefined') return;
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        fetchAppointments(selectedPersonnel, true);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [isLoggedIn, selectedPersonnel, fetchAppointments]);
+
   /* ── Kalıcı oturum ── */
   useEffect(() => {
     try {
