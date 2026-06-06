@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import './Randevu.css';
 
 function RandevuContent() {
@@ -27,6 +28,7 @@ function RandevuContent() {
   const [allSlots, setAllSlots] = useState<string[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(true);
   const [closedReason, setClosedReason] = useState<string>('');
+  const [failedAvatars, setFailedAvatars] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetch('/api/branches')
@@ -182,8 +184,15 @@ function RandevuContent() {
                   onClick={() => { setSelectedPersonnel(p.id); setStep(3); }}
                 >
                   <div className="personnel-avatar" style={{ overflow: 'hidden', position: 'relative' }}>
-                    {p.image ? (
-                      <img src={p.image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    {p.image && !failedAvatars[p.id] ? (
+                      <Image
+                        src={p.image}
+                        alt={p.name}
+                        fill
+                        sizes="120px"
+                        style={{ objectFit: 'cover' }}
+                        onError={() => setFailedAvatars(prev => ({ ...prev, [p.id]: true }))}
+                      />
                     ) : (
                       p.name.charAt(0)
                     )}
