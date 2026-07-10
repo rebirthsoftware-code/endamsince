@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { withLocalImage } from '@/lib/personnel-images';
 
 const prisma = new PrismaClient();
 
@@ -12,7 +13,7 @@ export async function GET(request: Request) {
       where: branchId ? { branchId } : undefined,
       include: { branch: { select: { id: true, name: true, location: true } } },
     });
-    return NextResponse.json(personnel);
+    return NextResponse.json(personnel.map(withLocalImage));
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch personnel' }, { status: 500 });
   }
