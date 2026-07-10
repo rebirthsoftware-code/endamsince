@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { PrismaClient } from '@prisma/client';
 import { getSiteContent, pick } from '@/lib/content';
+import { withLocalImage } from '@/lib/personnel-images';
 import './ekip.css';
 
 export const dynamic = 'force-dynamic';
@@ -24,7 +25,7 @@ export default async function EkipPage() {
 
   try {
     [personnel, perks] = await Promise.all([
-      prisma.personnel.findMany({ include: { branch: true } }),
+      prisma.personnel.findMany({ include: { branch: true } }).then(list => list.map(withLocalImage)),
       prisma.infoCard.findMany({
         where: { active: true, group: 'team-perks' },
         orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
