@@ -51,6 +51,19 @@ export async function POST(request: Request) {
       }
     }
 
+    // Geçmiş tarihe randevu engeli. Sunucu UTC'de çalıştığı ve
+    // müşteri cihazının saati güvenilir olmadığı için "bugün"
+    // Türkiye saatiyle hesaplanır (en-CA → YYYY-MM-DD formatı verir).
+    const todayTR = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Istanbul',
+    }).format(new Date());
+    if (String(date || '') < todayTR) {
+      return NextResponse.json(
+        { error: 'Geçmiş bir tarihe randevu alınamaz. Lütfen tarihi kontrol edin.' },
+        { status: 400 }
+      );
+    }
+
     // Yönetici tarafından kapatılmış tarih aralığı kontrolü
     const closure = await isDateClosed(String(date || ''));
     if (closure.closed) {
