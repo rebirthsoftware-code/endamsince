@@ -2,7 +2,18 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import './Randevu.css';
+
+/* "Bugün"ü cihazın YEREL saatiyle döndürür.
+   toISOString() UTC verdiği için gece 00:00-03:00 arası (TR, UTC+3)
+   bir önceki günü döndürüyordu; müşteri farkında olmadan düne
+   randevu alıyor, panel de geçmiş tarihi gizlediği için randevu
+   "sisteme düşmüyor" görünüyordu. */
+function todayLocalISO(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 function RandevuContent() {
   const searchParams = useSearchParams();
@@ -16,7 +27,7 @@ function RandevuContent() {
   const [selectedPersonnel, setSelectedPersonnel] = useState<string>('');
   const [selectedServiceNames, setSelectedServiceNames] = useState<string[]>([]);
   // Tarih input'u boş gözükmesin diye bugünü varsayılan yap (kullanıcı değiştirebilir)
-  const [date, setDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState<string>(() => todayLocalISO());
   const [time, setTime] = useState<string>('');
   const [customerName, setCustomerName] = useState<string>('');
   const [customerPhone, setCustomerPhone] = useState<string>('0');
@@ -27,6 +38,7 @@ function RandevuContent() {
   const [allSlots, setAllSlots] = useState<string[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(true);
   const [closedReason, setClosedReason] = useState<string>('');
+  const [failedAvatars, setFailedAvatars] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetch('/api/branches')
@@ -182,8 +194,15 @@ function RandevuContent() {
                   onClick={() => { setSelectedPersonnel(p.id); setStep(3); }}
                 >
                   <div className="personnel-avatar" style={{ overflow: 'hidden', position: 'relative' }}>
-                    {p.image ? (
-                      <img src={p.image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    {p.image && !failedAvatars[p.id] ? (
+                      <Image
+                        src={p.image}
+                        alt={p.name}
+                        fill
+                        sizes="120px"
+                        style={{ objectFit: 'cover' }}
+                        onError={() => setFailedAvatars(prev => ({ ...prev, [p.id]: true }))}
+                      />
                     ) : (
                       p.name.charAt(0)
                     )}
@@ -243,7 +262,7 @@ function RandevuContent() {
             <h3 className="heading-3 mb-6">4. Tarih ve Saat</h3>
             <div className="input-group">
               <label className="input-label">Tarih Seçin</label>
-              <input type="date" className="input-field input-lg" value={date} onChange={e => setDate(e.target.value)} min={new Date().toISOString().split('T')[0]} />
+              <input type="date" className="input-field input-lg" value={date} onChange={e => setDate(e.target.value)} min={todayLocalISO()} />
             </div>
             <div className="input-group mt-6">
               <label className="input-label">Saat Seçin (saate tıklayın, otomatik devam edecek)</label>
@@ -258,7 +277,7 @@ function RandevuContent() {
               ) : (() => {
                 // Bugün için geçmiş saatler seçilemez
                 const today = new Date();
-                const isToday = date === today.toISOString().split('T')[0];
+                const isToday = date === todayLocalISO();
                 const nowHM = isToday
                   ? `${String(today.getHours()).padStart(2, '0')}:${String(today.getMinutes()).padStart(2, '0')}`
                   : '';

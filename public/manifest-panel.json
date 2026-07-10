@@ -1,6 +1,7 @@
 {
-  "name": "Endamsince Personel Paneli",
-  "short_name": "Endam Panel",
+  "id": "/panel?app=personel",
+  "name": "Endam Personel",
+  "short_name": "Endam Personel",
   "description": "Endamsince Erkek Kuaför - personel randevu yönetim paneli",
   "start_url": "/panel",
   "scope": "/panel",

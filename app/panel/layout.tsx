@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Endam Panel',
+    title: 'Endam Personel',
   },
 };
 

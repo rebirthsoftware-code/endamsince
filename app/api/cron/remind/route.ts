@@ -26,17 +26,16 @@ export async function GET(request: Request) {
   }
 
   const now = new Date();
-  const isoDate = (d: Date) => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  };
+  // Randevu tarihleri Türkiye gününe göre tutulur; sunucu ise UTC'de
+  // çalışır. "Bugün/yarın" İstanbul saatine göre hesaplanmalı
+  // (en-CA → YYYY-MM-DD formatı verir).
+  const isoDateTR = (d: Date) =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul' }).format(d);
 
   // Bugün ve yarınki tarihler — saat string'lerini parse edip filtrelenecek
   const candidateDates = Array.from(new Set([
-    isoDate(now),
-    isoDate(new Date(now.getTime() + 86_400_000)),
+    isoDateTR(now),
+    isoDateTR(new Date(now.getTime() + 86_400_000)),
   ]));
 
   const winEnd = now.getTime() + 75 * 60_000; // 75 dk ileri
@@ -60,7 +59,9 @@ export async function GET(request: Request) {
 
     for (const a of upcoming) {
       scanned++;
-      const target = new Date(`${a.date}T${a.time}:00`).getTime();
+      // Randevu saati Türkiye saatidir; sunucu UTC olduğundan ofseti
+      // açıkça belirtmezsek 3 saat kayar (TR sabit UTC+3, yaz saati yok).
+      const target = new Date(`${a.date}T${a.time}:00+03:00`).getTime();
       // Geçmişte ya da çok ilerde olanlar atlansın
       if (target <= now.getTime()) continue;
       if (target > winEnd) continue;

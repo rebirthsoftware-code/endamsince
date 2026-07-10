@@ -1,5 +1,6 @@
 {
-  "name": "Endamsince Yönetim Paneli",
+  "id": "/admin?app=yonetim",
+  "name": "Endam Yönetim",
   "short_name": "Endam Admin",
   "description": "Endamsince Erkek Kuaför - yönetim paneli",
   "start_url": "/admin",
