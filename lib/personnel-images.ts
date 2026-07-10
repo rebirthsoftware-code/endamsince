@@ -32,8 +32,19 @@ export function slugifyName(name: string): string {
 }
 
 export const LOCAL_PERSONNEL_IMAGES: Record<string, string> = {
-  // Fotoğraflar repoya eklendikçe buraya kayıt düşülecek, örn:
-  // 'mirac-yigit-ayhan': '/personnel/mirac-yigit-ayhan.webp',
+  'a-enes-kose': '/personnel/a-enes-kose.webp',
+  'ahmet-enes-girgin': '/personnel/ahmet-enes-girgin.webp',
+  'bugra-duman': '/personnel/bugra-duman.webp',
+  'burak-can': '/personnel/burak-can.webp',
+  'emirhan-sari': '/personnel/emirhan-sari.webp',
+  'eren-kaptan': '/personnel/eren-kaptan.webp',
+  'fuat-porsuk': '/personnel/fuat-porsuk.webp',
+  'mirac-yigit-ayhan': '/personnel/mirac-yigit-ayhan.webp',
+  'murat-porsuk': '/personnel/murat-porsuk.webp',
+  'omurhan-tanrikulu': '/personnel/omurhan-tanrikulu.webp',
+  'recep-mirac-ustun': '/personnel/recep-mirac-ustun.webp',
+  'samet-sevinc': '/personnel/samet-sevinc.webp',
+  'yalin-ozcicek': '/personnel/yalin-ozcicek.webp',
 };
 
 /** Personel kaydının image alanını, repoda yerel fotoğrafı varsa onunla değiştirir. */
