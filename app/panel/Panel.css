@@ -1215,3 +1215,232 @@
   color: #aaa;
   cursor: not-allowed;
 }
+
+/* ══════════════════════════════
+   RAPORLAR
+   ══════════════════════════════ */
+
+.panel-view-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.1rem;
+  background: var(--p-surface);
+  border: 1px solid var(--p-border);
+  border-radius: var(--p-radius);
+  padding: 0.35rem;
+  box-shadow: var(--p-shadow-sm);
+}
+.panel-view-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.7rem 1rem;
+  border: none;
+  border-radius: var(--p-radius-sm);
+  background: transparent;
+  color: var(--p-text-mid);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.panel-view-tab:hover { color: var(--p-text); }
+.panel-view-tab.active {
+  background: var(--p-orange);
+  color: #fff;
+}
+
+.reports { display: flex; flex-direction: column; }
+
+.report-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  margin: 0.2rem 0 1.1rem;
+}
+.report-nav-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--p-border-strong);
+  background: var(--p-surface);
+  color: var(--p-text-mid);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.report-nav-btn:hover:not(:disabled) { color: var(--p-orange); border-color: var(--p-orange); }
+.report-nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.report-nav-label {
+  min-width: 170px;
+  text-align: center;
+  font-size: 1rem;
+  color: var(--p-text);
+  text-transform: capitalize;
+}
+
+.report-compare {
+  margin: 0.75rem 0 1.1rem;
+  font-size: 0.85rem;
+  color: var(--p-text-muted);
+  text-align: center;
+}
+.report-compare strong { color: var(--p-text-mid); }
+.report-compare-delta { color: var(--p-text-mid); }
+
+.report-card {
+  background: var(--p-surface);
+  border: 1px solid var(--p-border);
+  border-radius: var(--p-radius);
+  box-shadow: var(--p-shadow-sm);
+  padding: 1.1rem 1.2rem 1rem;
+  margin-bottom: 1.1rem;
+}
+.report-card-title {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--p-text);
+}
+.report-card-title span {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--p-text-muted);
+}
+.report-empty {
+  margin: 0.5rem 0;
+  font-size: 0.88rem;
+  color: var(--p-text-muted);
+}
+
+/* Ciro kartı */
+.report-revenue { text-align: center; }
+.report-revenue-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--p-text-muted);
+}
+.report-revenue-value {
+  display: block;
+  margin: 0.3rem 0 0.35rem;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--p-text);
+  font-variant-numeric: tabular-nums;
+}
+.report-revenue-note {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--p-text-muted);
+}
+
+/* Çubuk grafik: tabana oturan ince çubuklar, 4px yuvarlak uç, 2px aralık */
+.report-chart {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  height: 150px;
+}
+.report-bar-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.report-bar-val {
+  height: 16px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--p-text-mid);
+  font-variant-numeric: tabular-nums;
+}
+.report-bar-track {
+  flex: 1;
+  width: 100%;
+  max-width: 26px;
+  display: flex;
+  align-items: flex-end;
+  border-bottom: 1px solid var(--p-border-strong);
+}
+.report-chart.dense .report-bar-track { max-width: none; }
+.report-bar {
+  width: 100%;
+  background: var(--p-orange);
+  border-radius: 4px 4px 0 0;
+  min-height: 0;
+  transition: height 0.25s ease;
+}
+.report-bar-label {
+  height: 16px;
+  margin-top: 3px;
+  font-size: 0.68rem;
+  color: var(--p-text-muted);
+  white-space: nowrap;
+}
+
+.report-table-details { margin-top: 0.8rem; }
+.report-table-details summary {
+  font-size: 0.78rem;
+  color: var(--p-text-muted);
+  cursor: pointer;
+}
+.report-table {
+  width: 100%;
+  margin-top: 0.6rem;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.report-table th, .report-table td {
+  text-align: left;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--p-border);
+  color: var(--p-text-mid);
+}
+.report-table th { font-weight: 600; color: var(--p-text); }
+
+/* En çok istenen hizmetler */
+.report-services { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+.report-service-row { display: flex; align-items: center; gap: 0.7rem; }
+.report-service-name {
+  flex: 0 0 38%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  color: var(--p-text);
+}
+.report-service-track {
+  flex: 1;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--p-bg);
+  overflow: hidden;
+}
+.report-service-bar {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  background: var(--p-orange);
+}
+.report-service-count {
+  flex: 0 0 2ch;
+  text-align: right;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--p-text-mid);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 480px) {
+  .report-nav-label { min-width: 130px; font-size: 0.9rem; }
+  .report-bar-label { font-size: 0.6rem; }
+}
