@@ -37,6 +37,8 @@ type Appointment = {
   createdAt?: string;
 };
 type Filter = 'all' | 'pending' | 'today' | 'approved';
+type View = 'list' | 'reports';
+type PeriodKind = 'day' | 'week' | 'month';
 
 /** Panel'den manuel saat bloku için kullanılan placeholder müşteri adı. */
 const MANUAL_BLOCK_NAME = 'Manuel Blok';
@@ -54,6 +56,50 @@ function todayISO(): string {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+function toISO(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function addDaysISO(iso: string, n: number): string {
+  const d = new Date(iso + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return toISO(d);
+}
+
+/** Rapor dönemi: offset 0 = içinde bulunulan gün/hafta/ay, -1 = bir önceki… */
+function periodRange(kind: PeriodKind, offset: number): { start: string; end: string; label: string } {
+  const now = new Date();
+  if (kind === 'day') {
+    const d = new Date(now);
+    d.setDate(d.getDate() + offset);
+    const iso = toISO(d);
+    return {
+      start: iso,
+      end: iso,
+      label: d.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' }),
+    };
+  }
+  if (kind === 'week') {
+    const d = new Date(now);
+    const dow = (d.getDay() + 6) % 7; // Pazartesi = 0
+    d.setDate(d.getDate() - dow + offset * 7);
+    const e = new Date(d);
+    e.setDate(e.getDate() + 6);
+    const fmt = (x: Date) => x.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+    return { start: toISO(d), end: toISO(e), label: `${fmt(d)} – ${fmt(e)}` };
+  }
+  const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  const e = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+  return {
+    start: toISO(d),
+    end: toISO(e),
+    label: d.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }),
+  };
 }
 
 function formatDate(iso: string): string {
@@ -82,6 +128,7 @@ export default function Panel() {
   const [refreshing, setRefreshing] = useState(false);
   const [now, setNow] = useState<Date>(() => new Date());
   const [showAddModal, setShowAddModal] = useState(false);
+  const [view, setView] = useState<View>('list');
 
   /* ── Personel listesi ── */
   useEffect(() => {
@@ -354,6 +401,33 @@ export default function Panel() {
       <div className="panel-container">
         <PushSubscribeButton personnelId={selectedPersonnel} />
 
+        {/* Görünüm sekmeleri */}
+        <nav className="panel-view-tabs" role="tablist">
+          <button
+            role="tab"
+            aria-selected={view === 'list'}
+            className={`panel-view-tab ${view === 'list' ? 'active' : ''}`}
+            onClick={() => setView('list')}
+          >
+            <span aria-hidden>📋</span> Randevular
+          </button>
+          <button
+            role="tab"
+            aria-selected={view === 'reports'}
+            className={`panel-view-tab ${view === 'reports' ? 'active' : ''}`}
+            onClick={() => setView('reports')}
+          >
+            <span aria-hidden>📊</span> Raporlar
+          </button>
+        </nav>
+
+        {view === 'reports' ? (
+          <ReportsView
+            appointments={appointments}
+            branchId={me?.branchId ?? me?.branch?.id}
+          />
+        ) : (
+        <>
         <button
           type="button"
           className="panel-add-btn"
@@ -407,6 +481,8 @@ export default function Panel() {
               />
             ))}
           </ul>
+        )}
+        </>
         )}
       </div>
 
@@ -624,6 +700,262 @@ function BlockSlotsModal({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ────────── RAPORLAR ────────── */
+
+const DAY_HOURS = Array.from({ length: 12 }, (_, i) => 9 + i); // 09..20
+const WEEK_DAY_NAMES = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+
+function ReportsView({ appointments, branchId }: { appointments: Appointment[]; branchId?: string }) {
+  const [kind, setKind] = useState<PeriodKind>('day');
+  const [offset, setOffset] = useState(0);
+  const [priceMap, setPriceMap] = useState<Record<string, number> | null>(null);
+
+  // Dönem türü değişince navigasyonu bugüne sıfırla
+  useEffect(() => { setOffset(0); }, [kind]);
+
+  // Tahmini ciro için şube hizmet fiyatları
+  useEffect(() => {
+    if (!branchId) return;
+    fetch(`/api/services?branchId=${encodeURIComponent(branchId)}`)
+      .then((r) => r.json())
+      .then((list) => {
+        if (!Array.isArray(list)) return;
+        const map: Record<string, number> = {};
+        for (const s of list) {
+          const n = parseInt(String(s?.price ?? '').replace(/[^\d]/g, ''), 10);
+          if (s?.name && Number.isFinite(n) && n > 0) map[s.name] = n;
+        }
+        setPriceMap(map);
+      })
+      .catch(() => {});
+  }, [branchId]);
+
+  const range = useMemo(() => periodRange(kind, offset), [kind, offset]);
+  const prevRange = useMemo(() => periodRange(kind, offset - 1), [kind, offset]);
+
+  const inRange = useCallback(
+    (r: { start: string; end: string }) =>
+      appointments.filter(
+        (a) => a.customerName !== MANUAL_BLOCK_NAME && a.date >= r.start && a.date <= r.end
+      ),
+    [appointments]
+  );
+
+  const inPeriod = useMemo(() => inRange(range), [inRange, range]);
+  const prevTotal = useMemo(() => inRange(prevRange).length, [inRange, prevRange]);
+
+  const counts = useMemo(() => ({
+    total: inPeriod.length,
+    approved: inPeriod.filter((a) => a.status === 'APPROVED').length,
+    pending: inPeriod.filter((a) => a.status === 'PENDING').length,
+    lost: inPeriod.filter((a) => a.status === 'REJECTED' || a.status === 'CANCELLED').length,
+  }), [inPeriod]);
+
+  /* İş yükü = onaylı + bekleyen (red/iptal grafiğe girmez) */
+  const active = useMemo(
+    () => inPeriod.filter((a) => a.status === 'APPROVED' || a.status === 'PENDING'),
+    [inPeriod]
+  );
+
+  const buckets = useMemo(() => {
+    if (kind === 'day') {
+      return DAY_HOURS.map((h) => {
+        const hh = String(h).padStart(2, '0');
+        return {
+          key: hh,
+          label: hh,
+          title: `${hh}:00–${hh}:59`,
+          count: active.filter((a) => a.time.slice(0, 2) === hh).length,
+        };
+      });
+    }
+    if (kind === 'week') {
+      return WEEK_DAY_NAMES.map((n, i) => {
+        const d = addDaysISO(range.start, i);
+        return { key: d, label: n, title: formatDate(d), count: active.filter((a) => a.date === d).length };
+      });
+    }
+    const lastDay = Number(range.end.slice(8, 10));
+    return Array.from({ length: lastDay }, (_, i) => {
+      const d = addDaysISO(range.start, i);
+      const dayNo = i + 1;
+      return {
+        key: d,
+        // Ayda 28-31 sütun sığsın diye etiketler seyrek
+        label: dayNo === 1 || dayNo % 5 === 0 ? String(dayNo) : '',
+        title: formatDate(d),
+        count: active.filter((a) => a.date === d).length,
+      };
+    });
+  }, [kind, active, range]);
+
+  const maxCount = Math.max(1, ...buckets.map((b) => b.count));
+  const activeTotal = active.length;
+
+  /* Tahmini ciro: dönemin ONAYLI randevularındaki hizmetlerin şube fiyat toplamı */
+  const revenue = useMemo(() => {
+    if (!priceMap) return null;
+    let sum = 0;
+    let matched = false;
+    for (const a of inPeriod) {
+      if (a.status !== 'APPROVED') continue;
+      for (const s of a.services ?? []) {
+        const p = priceMap[s];
+        if (p) { sum += p; matched = true; }
+      }
+    }
+    return matched ? sum : null;
+  }, [inPeriod, priceMap]);
+
+  const topServices = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const a of active) for (const s of a.services ?? []) m.set(s, (m.get(s) ?? 0) + 1);
+    return [...m.entries()].sort((x, y) => y[1] - x[1]).slice(0, 5);
+  }, [active]);
+
+  const delta = counts.total - prevTotal;
+
+  return (
+    <div className="reports">
+      {/* Dönem türü */}
+      <nav className="filter-bar" role="tablist">
+        {([
+          { id: 'day', label: 'Günlük' },
+          { id: 'week', label: 'Haftalık' },
+          { id: 'month', label: 'Aylık' },
+        ] as { id: PeriodKind; label: string }[]).map((p) => (
+          <button
+            key={p.id}
+            role="tab"
+            aria-selected={kind === p.id}
+            className={`filter-tab ${kind === p.id ? 'active' : ''}`}
+            onClick={() => setKind(p.id)}
+          >
+            {p.label}
+          </button>
+        ))}
+      </nav>
+
+      {/* Dönem gezintisi */}
+      <div className="report-nav">
+        <button
+          type="button"
+          className="report-nav-btn"
+          onClick={() => setOffset((o) => o - 1)}
+          aria-label="Önceki dönem"
+        >
+          ‹
+        </button>
+        <strong className="report-nav-label">{range.label}</strong>
+        <button
+          type="button"
+          className="report-nav-btn"
+          onClick={() => setOffset((o) => Math.min(0, o + 1))}
+          disabled={offset >= 0}
+          aria-label="Sonraki dönem"
+        >
+          ›
+        </button>
+      </div>
+
+      {/* Özet kartlar */}
+      <section className="stat-grid">
+        <StatCard label="Toplam" value={counts.total} accent="orange" icon="📅" />
+        <StatCard label="Onaylanan" value={counts.approved} accent="green" icon="✓" />
+        <StatCard label="Bekleyen" value={counts.pending} accent="amber" icon="⏳" />
+        <StatCard label="Red / İptal" value={counts.lost} accent="red" icon="✕" />
+      </section>
+
+      <p className="report-compare">
+        Önceki dönem: <strong>{prevTotal}</strong> randevu
+        {delta !== 0 && (
+          <span className="report-compare-delta">
+            {' '}({delta > 0 ? '▲' : '▼'} {Math.abs(delta)})
+          </span>
+        )}
+      </p>
+
+      {/* Tahmini ciro */}
+      {revenue !== null && (
+        <section className="report-card report-revenue">
+          <span className="report-revenue-label">Tahmini Ciro</span>
+          <strong className="report-revenue-value">₺{revenue.toLocaleString('tr-TR')}</strong>
+          <small className="report-revenue-note">
+            Onaylı randevulardaki hizmetlerin güncel şube fiyatlarına göre hesaplanır.
+          </small>
+        </section>
+      )}
+
+      {/* Yoğunluk grafiği */}
+      <section className="report-card">
+        <h3 className="report-card-title">
+          Randevu Yoğunluğu <span>(onaylı + bekleyen)</span>
+        </h3>
+        {activeTotal === 0 ? (
+          <p className="report-empty">Bu dönemde randevu yok.</p>
+        ) : (
+          <>
+            <div
+              className={`report-chart ${kind === 'month' ? 'dense' : ''}`}
+              role="img"
+              aria-label={`${range.label} randevu yoğunluğu grafiği`}
+            >
+              {buckets.map((b) => (
+                <div key={b.key} className="report-bar-col" title={`${b.title}: ${b.count} randevu`}>
+                  <span className="report-bar-val">
+                    {b.count > 0 && (kind !== 'month' || b.count === maxCount) ? b.count : ''}
+                  </span>
+                  <div className="report-bar-track">
+                    <div
+                      className="report-bar"
+                      style={{ height: `${Math.round((b.count / maxCount) * 100)}%` }}
+                    />
+                  </div>
+                  <span className="report-bar-label">{b.label}</span>
+                </div>
+              ))}
+            </div>
+            <details className="report-table-details">
+              <summary>Tablo görünümü</summary>
+              <table className="report-table">
+                <thead>
+                  <tr><th>{kind === 'day' ? 'Saat' : 'Gün'}</th><th>Randevu</th></tr>
+                </thead>
+                <tbody>
+                  {buckets.filter((b) => b.count > 0).map((b) => (
+                    <tr key={b.key}><td>{b.title}</td><td>{b.count}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </details>
+          </>
+        )}
+      </section>
+
+      {/* En çok istenen hizmetler */}
+      {topServices.length > 0 && (
+        <section className="report-card">
+          <h3 className="report-card-title">En Çok İstenen Hizmetler</h3>
+          <ul className="report-services">
+            {topServices.map(([name, cnt]) => (
+              <li key={name} className="report-service-row">
+                <span className="report-service-name">{name}</span>
+                <span className="report-service-track">
+                  <span
+                    className="report-service-bar"
+                    style={{ width: `${Math.round((cnt / topServices[0][1]) * 100)}%` }}
+                  />
+                </span>
+                <span className="report-service-count">{cnt}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }
