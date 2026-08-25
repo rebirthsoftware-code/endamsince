@@ -514,6 +514,7 @@ function BlockSlotsModal({
   const [allSlots, setAllSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(true);
   const [busyTime, setBusyTime] = useState<string>(''); // o an işlem yapılan saat
+  const [closingDay, setClosingDay] = useState(false);
   const [err, setErr] = useState('');
 
   useEffect(() => {
@@ -567,6 +568,45 @@ function BlockSlotsModal({
     () => Array.from(slotState.values()).filter((a) => a.customerName === MANUAL_BLOCK_NAME),
     [slotState]
   );
+
+  /* Kapatılabilir (boş + geçmemiş) saatler */
+  const freeSlots = useMemo(() => {
+    const isToday = date === todayISO();
+    const t = new Date();
+    const nowHM = isToday
+      ? `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`
+      : '';
+    return allSlots.filter((s) => !slotState.has(s) && !(isToday && s <= nowHM));
+  }, [allSlots, slotState, date]);
+
+  /** Günü kapat: kalan tüm boş saatleri tek seferde manuel blokla. */
+  const closeDay = async () => {
+    if (freeSlots.length === 0) return;
+    const realCount = Array.from(slotState.values()).filter((a) => a.customerName !== MANUAL_BLOCK_NAME).length;
+    const warn = realCount > 0
+      ? `\n\nDikkat: Bu günde ${realCount} gerçek randevu var; onlar silinmez, gerekirse tek tek iptal etmelisiniz.`
+      : '';
+    if (!confirm(`${formatDate(date)} gününün kalan ${freeSlots.length} boş saati kapatılacak; müşteriler bu güne randevu alamayacak.${warn}\n\nEmin misiniz?`)) return;
+    setErr('');
+    setClosingDay(true);
+    try {
+      const results = await Promise.all(
+        freeSlots.map((time) =>
+          fetch('/api/panel/appointments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ personnelId, date, time }),
+          })
+            .then((r) => r.ok || r.status === 409) // 409 = zaten dolu, sorun değil
+            .catch(() => false)
+        )
+      );
+      if (results.some((ok) => !ok)) setErr('Bazı saatler kapatılamadı. Listeyi kontrol edip tekrar deneyin.');
+      onChanged();
+    } finally {
+      setClosingDay(false);
+    }
+  };
 
   const unblockAll = async () => {
     if (blockedToday.length === 0) return;
@@ -622,6 +662,23 @@ function BlockSlotsModal({
           <p className="panel-modal-hint">
             Boş saate tıkla → blokla. Bloklu saate (✕) tıkla → kaldır. 🔒 işaretli gerçek randevular değiştirilemez.
           </p>
+
+          {!loadingSlots && freeSlots.length > 0 && (
+            <button
+              type="button"
+              className="panel-modal-close-day"
+              onClick={closeDay}
+              disabled={closingDay || !!busyTime}
+            >
+              {closingDay ? 'Gün kapatılıyor…' : `🚫 Günü Kapat (${freeSlots.length} boş saat)`}
+            </button>
+          )}
+
+          {!loadingSlots && allSlots.length > 0 && freeSlots.length === 0 && blockedToday.length > 0 && (
+            <p className="panel-modal-day-closed">
+              🚫 Bu gün müşterilere kapalı. Açmak için blokları kaldırın.
+            </p>
+          )}
 
           {blockedToday.length > 0 && (
             <button
