@@ -18,16 +18,17 @@ model Branch {
 }
 
 model Personnel {
-  id            String             @id @default(cuid())
+  id            String                  @id @default(cuid())
   name          String
   role          String
   image         String?
-  pinCode       String             // For login to the panel
+  pinCode       String                  // For login to the panel
   branchId      String
-  branch        Branch             @relation(fields: [branchId], references: [id])
+  branch        Branch                  @relation(fields: [branchId], references: [id])
   appointments  Appointment[]
   subscriptions PushSubscription[]
   timeSlots     TimeSlot[]
+  servicePrices PersonnelServicePrice[]
 }
 
 model GalleryItem {
@@ -71,7 +72,8 @@ model Service {
   order       Int            @default(0)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
-  branchPrices ServicePrice[]
+  branchPrices    ServicePrice[]
+  personnelPrices PersonnelServicePrice[]
 
   @@index([active, order])
 }
@@ -90,6 +92,22 @@ model ServicePrice {
 
   @@unique([serviceId, branchId])
   @@index([branchId])
+}
+
+// Per-personnel service pricing. Price resolution order:
+// personnel override > branch override > Service.price (default).
+model PersonnelServicePrice {
+  id          String    @id @default(cuid())
+  serviceId   String
+  service     Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  personnelId String
+  personnel   Personnel @relation(fields: [personnelId], references: [id], onDelete: Cascade)
+  price       String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([serviceId, personnelId])
+  @@index([personnelId])
 }
 
 model PushSubscription {
