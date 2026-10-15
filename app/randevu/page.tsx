@@ -77,12 +77,20 @@ function RandevuContent() {
         .then(res => res.json())
         .then(data => setPersonnel(data))
         .catch(err => console.error(err));
-      fetch(`/api/services?branchId=${selectedBranch}`)
-        .then(res => res.json())
-        .then(data => setServices(Array.isArray(data) ? data : []))
-        .catch(err => console.error(err));
     }
   }, [selectedBranch]);
+
+  /* ── Hizmetler: personel seçiliyse fiyatlar o personele göre gelir
+        (çözümleme: personel > şube > varsayılan) ── */
+  useEffect(() => {
+    if (!selectedBranch) return;
+    const q = `branchId=${encodeURIComponent(selectedBranch)}` +
+      (selectedPersonnel ? `&personnelId=${encodeURIComponent(selectedPersonnel)}` : '');
+    fetch(`/api/services?${q}`)
+      .then(res => res.json())
+      .then(data => setServices(Array.isArray(data) ? data : []))
+      .catch(err => console.error(err));
+  }, [selectedBranch, selectedPersonnel]);
 
   /* ── Dolu saat listesini personel + tarih değişince çek ── */
   useEffect(() => {

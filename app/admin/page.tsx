@@ -380,6 +380,7 @@ const EMPTY_SERVICE: Omit<Service, 'id'> = {
 function ServicesTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err', m: string) => void }) {
   const [list, setList] = useState<Service[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
+  const [personnel, setPersonnel] = useState<Personnel[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Service | null>(null);
   const [creating, setCreating] = useState(false);
@@ -387,23 +388,26 @@ function ServicesTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [sRes, bRes] = await Promise.all([
+      const [sRes, bRes, pRes] = await Promise.all([
         adminFetch('/api/admin/services', { headers: authHeaders(pin) }),
         adminFetch('/api/admin/branches', { headers: authHeaders(pin) }),
+        adminFetch('/api/admin/personnel', { headers: authHeaders(pin) }),
       ]);
       if (sRes.ok) setList(await sRes.json());
       if (bRes.ok) setBranches(await bRes.json());
+      if (pRes.ok) setPersonnel(await pRes.json());
     } finally {
       setLoading(false);
     }
   }, [pin]);
   useEffect(() => { load(); }, [load]);
 
-  /** Service data + opsiyonel branch price overrides'ı kaydet. */
+  /** Service data + opsiyonel branch/personel price overrides'ı kaydet. */
   const save = async (
     data: Omit<Service, 'id'>,
     id?: string,
-    branchPrices?: { branchId: string; price: string }[]
+    branchPrices?: { branchId: string; price: string }[],
+    personnelPrices?: { personnelId: string; price: string }[]
   ) => {
     const res = await fetch(id ? `/api/admin/services/${id}` : '/api/admin/services', {
       method: id ? 'PATCH' : 'POST',
@@ -430,6 +434,17 @@ function ServicesTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err
           body: JSON.stringify(branchPrices),
         });
       } catch (e) { console.error('Branch prices kaydedilemedi:', e); }
+    }
+
+    // Personel fiyatlarını upsert et
+    if (serviceId && personnelPrices) {
+      try {
+        await fetch(`/api/admin/services/${serviceId}/personnel-prices`, {
+          method: 'PUT',
+          headers: authHeaders(pin),
+          body: JSON.stringify(personnelPrices),
+        });
+      } catch (e) { console.error('Personnel prices kaydedilemedi:', e); }
     }
 
     showToast('ok', id ? 'Güncellendi' : 'Eklendi');
@@ -502,9 +517,10 @@ function ServicesTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err
           initial={editing ? editing : { ...EMPTY_SERVICE, order: list.length + 1 }}
           editingId={editing?.id}
           branches={branches}
+          personnel={personnel}
           pin={pin}
           onClose={() => { setEditing(null); setCreating(false); }}
-          onSave={(d, prices) => save(d, editing?.id, prices)}
+          onSave={(d, prices, pPrices) => save(d, editing?.id, prices, pPrices)}
         />
       )}
     </section>
@@ -512,14 +528,19 @@ function ServicesTab({ pin, showToast }: { pin: string; showToast: (t: 'ok'|'err
 }
 
 function ServiceModal({
-  initial, editingId, branches, pin, onClose, onSave,
+  initial, editingId, branches, personnel, pin, onClose, onSave,
 }: {
   initial: Omit<Service, 'id'> | Service;
   editingId?: string;
   branches: Branch[];
+  personnel: Personnel[];
   pin: string;
   onClose: () => void;
-  onSave: (data: Omit<Service, 'id'>, branchPrices: { branchId: string; price: string }[]) => void;
+  onSave: (
+    data: Omit<Service, 'id'>,
+    branchPrices: { branchId: string; price: string }[],
+    personnelPrices: { personnelId: string; price: string }[],
+  ) => void;
 }) {
   const [form, setForm] = useState<Omit<Service, 'id'>>({
     name: initial.name,
@@ -538,16 +559,26 @@ function ServiceModal({
   const [branchPrices, setBranchPrices] = useState<Record<string, string>>({});
   const [loadingPrices, setLoadingPrices] = useState(false);
 
+  // Personele özel fiyatlar — personnelId → price haritası (boş = override yok)
+  const [personnelPrices, setPersonnelPrices] = useState<Record<string, string>>({});
+
   // Editing modunda mevcut override'ları çek
   useEffect(() => {
     if (!editingId) return;
     setLoadingPrices(true);
-    fetch(`/api/admin/services/${editingId}/prices`, { headers: authHeaders(pin) })
-      .then((r) => r.ok ? r.json() : [])
-      .then((rows: Array<{ branchId: string; price: string }>) => {
-        const map: Record<string, string> = {};
-        for (const r of rows) map[r.branchId] = r.price;
-        setBranchPrices(map);
+    Promise.all([
+      fetch(`/api/admin/services/${editingId}/prices`, { headers: authHeaders(pin) })
+        .then((r) => r.ok ? r.json() : []),
+      fetch(`/api/admin/services/${editingId}/personnel-prices`, { headers: authHeaders(pin) })
+        .then((r) => r.ok ? r.json() : []),
+    ])
+      .then(([bRows, pRows]: [Array<{ branchId: string; price: string }>, Array<{ personnelId: string; price: string }>]) => {
+        const bMap: Record<string, string> = {};
+        for (const r of bRows) bMap[r.branchId] = r.price;
+        setBranchPrices(bMap);
+        const pMap: Record<string, string> = {};
+        for (const r of pRows) pMap[r.personnelId] = r.price;
+        setPersonnelPrices(pMap);
       })
       .catch(() => {})
       .finally(() => setLoadingPrices(false));
@@ -559,12 +590,17 @@ function ServiceModal({
       branchId: b.id,
       price: (branchPrices[b.id] || '').trim(),
     }));
+    const pPrices = personnel.map((p) => ({
+      personnelId: p.id,
+      price: (personnelPrices[p.id] || '').trim(),
+    }));
     onSave(
       {
         ...form,
         features: featureText.split('\n').map((x) => x.trim()).filter(Boolean),
       },
       prices,
+      pPrices,
     );
   };
 
@@ -615,6 +651,57 @@ function ServiceModal({
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* ───── Personele özel fiyatlandırma ───── */}
+          {personnel.length > 0 && (
+            <div className="admin-field">
+              <span>
+                Personele Özel Fiyatlar (boş bırakılan personel şube/varsayılan fiyatı kullanır)
+                {' — '}
+                {Object.values(personnelPrices).filter((v) => v.trim()).length} özel fiyat
+              </span>
+              <details style={{ background: 'rgba(0,0,0,0.03)', borderRadius: 8, padding: '10px 12px' }}>
+                <summary style={{ cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                  👤 Personel fiyatlarını göster / gizle
+                </summary>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 10 }}>
+                  {loadingPrices && <em style={{ fontSize: 12, opacity: 0.6 }}>fiyatlar yükleniyor…</em>}
+                  {branches.map((b) => {
+                    const staff = personnel.filter((p) => p.branchId === b.id);
+                    if (staff.length === 0) return null;
+                    return (
+                      <div key={b.id} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, opacity: 0.7, marginTop: 4 }}>📍 {b.name}</span>
+                        {staff.map((p) => (
+                          <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span style={{ minWidth: 150, fontSize: 13 }}>{p.name}</span>
+                            <input
+                              placeholder={`Geçerli: ${(branchPrices[b.id] || '').trim() || form.price || '—'}`}
+                              value={personnelPrices[p.id] ?? ''}
+                              onChange={(e) => setPersonnelPrices((m) => ({ ...m, [p.id]: e.target.value }))}
+                              style={{ flex: 1 }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                  {/* Şubesi silinmiş/eşleşmeyen personel varsa yine listede olsun */}
+                  {personnel.filter((p) => !branches.some((b) => b.id === p.branchId)).map((p) => (
+                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ minWidth: 150, fontSize: 13 }}>{p.name}</span>
+                      <input
+                        placeholder={`Geçerli: ${form.price || '—'}`}
+                        value={personnelPrices[p.id] ?? ''}
+                        onChange={(e) => setPersonnelPrices((m) => ({ ...m, [p.id]: e.target.value }))}
+                        style={{ flex: 1 }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </details>
             </div>
           )}
 

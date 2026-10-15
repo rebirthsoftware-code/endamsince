@@ -425,6 +425,7 @@ export default function Panel() {
           <ReportsView
             appointments={appointments}
             branchId={me?.branchId ?? me?.branch?.id}
+            personnelId={selectedPersonnel}
           />
         ) : (
         <>
@@ -766,7 +767,7 @@ function BlockSlotsModal({
 const DAY_HOURS = Array.from({ length: 12 }, (_, i) => 9 + i); // 09..20
 const WEEK_DAY_NAMES = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
-function ReportsView({ appointments, branchId }: { appointments: Appointment[]; branchId?: string }) {
+function ReportsView({ appointments, branchId, personnelId }: { appointments: Appointment[]; branchId?: string; personnelId?: string }) {
   const [kind, setKind] = useState<PeriodKind>('day');
   const [offset, setOffset] = useState(0);
   const [priceMap, setPriceMap] = useState<Record<string, number> | null>(null);
@@ -774,10 +775,14 @@ function ReportsView({ appointments, branchId }: { appointments: Appointment[]; 
   // Dönem türü değişince navigasyonu bugüne sıfırla
   useEffect(() => { setOffset(0); }, [kind]);
 
-  // Tahmini ciro için şube hizmet fiyatları
+  // Tahmini ciro için hizmet fiyatları (personel > şube > varsayılan)
   useEffect(() => {
-    if (!branchId) return;
-    fetch(`/api/services?branchId=${encodeURIComponent(branchId)}`)
+    if (!branchId && !personnelId) return;
+    const q = [
+      branchId ? `branchId=${encodeURIComponent(branchId)}` : '',
+      personnelId ? `personnelId=${encodeURIComponent(personnelId)}` : '',
+    ].filter(Boolean).join('&');
+    fetch(`/api/services?${q}`)
       .then((r) => r.json())
       .then((list) => {
         if (!Array.isArray(list)) return;
@@ -789,7 +794,7 @@ function ReportsView({ appointments, branchId }: { appointments: Appointment[]; 
         setPriceMap(map);
       })
       .catch(() => {});
-  }, [branchId]);
+  }, [branchId, personnelId]);
 
   const range = useMemo(() => periodRange(kind, offset), [kind, offset]);
   const prevRange = useMemo(() => periodRange(kind, offset - 1), [kind, offset]);
